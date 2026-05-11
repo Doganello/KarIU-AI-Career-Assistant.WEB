@@ -1,8 +1,6 @@
 ﻿<script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-
-// Правильный импорт (рекомендуется использовать @)
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -23,6 +21,7 @@ const register = async () => {
   error.value = ''
 
   try {
+    // Валидация на фронте
     if (!form.value.fullName || !form.value.email || !form.value.password) {
       throw new Error('Заполните все обязательные поля')
     }
@@ -35,15 +34,13 @@ const register = async () => {
       throw new Error('Пароль должен быть не менее 6 символов')
     }
 
-    // Симуляция успешной регистрации
-    const mockToken = 'jwt-token-' + Date.now()
-    const mockUser = {
-      id: 1,
-      name: form.value.fullName,
-      email: form.value.email
-    }
+    // Отправка на бэкенд
+    await authStore.register({
+      email: form.value.email,
+      password: form.value.password,
+      // full_name: form.value.fullName, // раскомментируй, если добавишь в схему
+    })
 
-    authStore.login(mockToken, mockUser)
     router.push('/dashboard')
 
   } catch (err) {
