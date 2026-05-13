@@ -1,20 +1,16 @@
 <script setup>
 import { RouterView } from 'vue-router'
-
-// Компоненты
 import Header from './components/layout/Header.vue'
 import Sidebar from './components/layout/Sidebar.vue'
-
-// Pinia store
 import { useAuthStore } from './stores/auth'
 
-// Получаем store
+// Инициализация store
 const authStore = useAuthStore()
 </script>
 
 <template>
   <div class="app">
-    <!-- Авторизованный пользователь — полный интерфейс -->
+    <!-- Авторизованный пользователь -->
     <template v-if="authStore.isAuthenticated">
       <Header />
       <div class="main-layout">
@@ -25,7 +21,7 @@ const authStore = useAuthStore()
       </div>
     </template>
 
-    <!-- Неавторизованный пользователь — только страницы авторизации -->
+    <!-- Страницы авторизации (логин/регистрация) -->
     <template v-else>
       <RouterView />
     </template>
@@ -40,7 +36,7 @@ const authStore = useAuthStore()
 
 .main-layout {
   display: flex;
-  min-height: calc(100vh - 70px); /* 70px — примерная высота Header */
+  min-height: calc(100vh - 70px);
 }
 
 .content-area {
@@ -48,5 +44,14 @@ const authStore = useAuthStore()
   padding: 2rem;
   overflow-y: auto;
   background: #f8fafc;
+}
+
+/* Скроллбар */
+.content-area::-webkit-scrollbar {
+  width: 8px;
+}
+.content-area::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 </style>

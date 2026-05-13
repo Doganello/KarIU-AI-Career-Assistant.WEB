@@ -7,13 +7,18 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const menuItems = [
-  { path: '/dashboard', icon: '🏠', label: 'Дашборд' },
+  { path: '/dashboard', icon: '🏠', label: 'Главная страница' },
   { path: '/profile', icon: '👤', label: 'Профиль' },
   { path: '/resume', icon: '📄', label: 'Резюме' },
   { path: '/vacancies', icon: '💼', label: 'Вакансии' },
   { path: '/ai-chat', icon: '🤖', label: 'AI Чат' },
   { path: '/interview-simulator', icon: '🎤', label: 'Симулятор собеседования' },
 ]
+
+const logout = async () => {
+  await authStore.logout()
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -22,7 +27,6 @@ const menuItems = [
       <a
           v-for="item in menuItems"
           :key="item.path"
-          :href="item.path"
           @click.prevent="router.push(item.path)"
           :class="['nav-item', { active: route.path === item.path }]"
       >
@@ -31,9 +35,10 @@ const menuItems = [
       </a>
     </nav>
 
+    <!-- Кнопка "Выйти" внизу сайдбара -->
     <div class="sidebar-footer">
-      <button @click="authStore.logout()" class="logout-btn">
-        Выйти
+      <button @click="logout" class="logout-btn">
+        🚪 Выйти
       </button>
     </div>
   </aside>
@@ -44,10 +49,11 @@ const menuItems = [
   width: 260px;
   background: white;
   border-right: 1px solid #e2e8f0;
-  padding: 1.5rem 1rem;
+  padding: 2rem 1rem;
+  min-height: calc(100vh - 70px);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
 }
 
 .nav-menu {
@@ -65,6 +71,7 @@ const menuItems = [
   margin-bottom: 6px;
   font-size: 1.05rem;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
 .nav-item:hover {
@@ -77,20 +84,30 @@ const menuItems = [
   font-weight: 600;
 }
 
+/* Нижняя часть с кнопкой выхода */
 .sidebar-footer {
   margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  padding-top: 2rem;
 }
 
 .logout-btn {
   width: 100%;
-  padding: 10px;
+  padding: 12px 16px;
   background: #fee2e2;
   color: #ef4444;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logout-btn:hover {
+  background: #fecaca;
+  color: #dc2626;
 }
 </style>

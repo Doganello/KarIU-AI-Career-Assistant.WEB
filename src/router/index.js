@@ -1,49 +1,22 @@
-﻿import { createRouter, createWebHistory } from 'vue-router'
+﻿// router/index.js
+import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
-        {
-            path: '/',
-            redirect: '/dashboard'
-        },
-        {
-            path: '/login',
-            name: 'Login',
-            component: () => import('../components/view/Autorization/Login/Login.vue')
-        },
-        {
-            path: '/register',
-            name: 'Register',
-            component: () => import('../components/view/Autorization/Registration/Registration.vue')
-        },
+        { path: '/', redirect: '/dashboard' },
+
+        { path: '/login', name: 'Login', component: () => import('../components/view/Autorization/Login/Login.vue') },
+        { path: '/register', name: 'Register', component: () => import('../components/view/Autorization/Registration/Registration.vue') },
 
         // Защищённые страницы
-        {
-            path: '/dashboard',
-            name: 'Dashboard',
-            component: () => import('../components/view/Dashboard.vue'),
-            meta: { requiresAuth: true }
-        },
-        {
-            path: '/profile',
-            name: 'Profile',
-            component: () => import('../components/view/profile/profile.vue'),
-            meta: { requiresAuth: true }
-        },
-        {
-            path: '/resume',
-            name: 'Resume',
-            component: () => import('../components/view/resume/resume.vue'),
-            meta: { requiresAuth: true }
-        },
-        {
-            path: '/vacancies',
-            name: 'Vacancies',
-            component: () => import('../components/view/vacancies/vacancies.vue'),
-            meta: { requiresAuth: true }
-        },
+        { path: '/dashboard', name: 'Dashboard', component: () => import('../components/view/Dashboard.vue'), meta: { requiresAuth: true } },
+        { path: '/profile', name: 'Profile', component: () => import('../components/view/profile/profile.vue'), meta: { requiresAuth: true } },
+        { path: '/resume', name: 'Resume', component: () => import('../components/view/resume/resume.vue'), meta: { requiresAuth: true } },
+        { path: '/vacancies', name: 'Vacancies', component: () => import('../components/view/vacancies/vacancies.vue'), meta: { requiresAuth: true } },
+
+        // Новые страницы
         {
             path: '/ai-chat',
             name: 'AIChat',
@@ -60,15 +33,14 @@ const router = createRouter({
 })
 
 // Защита роутов
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
     const authStore = useAuthStore()
 
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-        next('/login')
-    } else if ((to.path === '/login' || to.path === '/register') && authStore.isAuthenticated) {
-        next('/dashboard')
-    } else {
-        next()
+        return '/login'
+    }
+    if ((to.path === '/login' || to.path === '/register') && authStore.isAuthenticated) {
+        return '/dashboard'
     }
 })
 

@@ -86,28 +86,27 @@ const login = async () => {
 
 .auth-card {
   background: white;
-  padding: 2.5rem;
-  border-radius: 16px;
+  padding: 45px 40px;
+  border-radius: 24px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.28);
 }
 
 .auth-header {
+  margin-bottom: 2.8rem;
   text-align: center;
-  margin-bottom: 2rem;
 }
 
 .logo {
-  height: 80px;
-  margin-bottom: 1rem;
-  border-radius: 8px;
+  height: 82px;
+  margin-bottom: 1.3rem;
 }
 
 .auth-header h1 {
-  margin: 0 0 8px 0;
+  margin: 0 0 10px 0;
   color: #1e40af;
-  font-size: 1.85rem;
+  font-size: 1.82rem;
   font-weight: 700;
 }
 
@@ -117,43 +116,44 @@ const login = async () => {
 }
 
 .form-group {
-  margin-bottom: 1.3rem;
+  margin-bottom: 1.75rem;
+  text-align: left;
 }
 
 label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 9px;
   font-weight: 500;
   color: #374151;
 }
 
 input {
   width: 100%;
-  padding: 14px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  padding: 15px 20px;           /* ← Увеличил отступ справа */
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 1rem;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 
 input:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
 }
 
 .login-btn {
   width: 100%;
-  padding: 14px;
+  padding: 16px;
   background: #1e40af;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
+  border-radius: 12px;
+  font-size: 1.12rem;
   font-weight: 600;
   cursor: pointer;
-  margin-top: 0.5rem;
-  transition: background 0.2s;
+  margin-top: 10px;
 }
 
 .login-btn:hover:not(:disabled) {
@@ -163,24 +163,18 @@ input:focus {
 .error-message {
   color: #ef4444;
   text-align: center;
-  margin: 12px 0;
-  font-size: 0.95rem;
+  margin: 14px 0;
 }
 
 .auth-footer {
   text-align: center;
-  margin-top: 1.8rem;
+  margin-top: 2.4rem;
   color: #6b7280;
-  font-size: 0.95rem;
 }
 
 .auth-footer a {
   color: #1e40af;
   text-decoration: none;
   font-weight: 500;
-}
-
-.auth-footer a:hover {
-  text-decoration: underline;
 }
 </style>
