@@ -1,97 +1,59 @@
-﻿<script setup>
-import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-
-const authStore = useAuthStore()
-const loading = ref(true)
-const profileData = ref({
-  lastName: '',
-  firstName: '',
-  middleName: '',
-  gender: '',
-  birthDate: '',
-  phone: '',
-  city: '',
-  specialty: '',
-  educationProgram: '',
-  experience: [],
-  certificates: '',
-  skills: '',
-  personalQualities: ''
-})
-
-const loadProfile = async () => {
-  try {
-    const res = await fetch('http://localhost:8000/api/resume/profile', {
-      credentials: 'include'
-    })
-    if (res.ok) {
-      const data = await res.json()
-      profileData.value = { ...profileData.value, ...data }
-    }
-  } catch (err) {
-    console.error('Ошибка загрузки профиля:', err)
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(loadProfile)
-</script>
-
-<template>
+﻿<template>
   <div class="profile-page">
     <h1 class="page-title">Мой профиль</h1>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Загрузка профиля...</p>
+    </div>
 
     <div v-else class="profile-content">
-      <!-- Основная информация -->
       <div class="card">
         <h2>Основная информация</h2>
-        <p><strong>ФИО:</strong> {{ profileData.lastName }} {{ profileData.firstName }} {{ profileData.middleName }}</p>
-        <p><strong>Пол:</strong> {{ profileData.gender === 'male' ? 'Мужской' : profileData.gender === 'female' ? 'Женский' : 'Не указан' }}</p>
-        <p><strong>Дата рождения:</strong> {{ profileData.birthDate }}</p>
-        <p><strong>Город:</strong> {{ profileData.city }}</p>
-        <p><strong>Телефон:</strong> {{ profileData.phone }}</p>
-        <p><strong>Специальность:</strong> {{ profileData.specialty || 'Не указана' }}</p>
+        <p><strong>ФИО:</strong> {{ fullName }}</p>
+        <p><strong>Специальность:</strong> {{ profile.specialty || 'Не указана' }}</p>
+        <p><strong>Дата рождения:</strong> {{ profile.birth_date || 'Не указана' }}</p>
+        <p><strong>Город:</strong> {{ profile.city || 'Не указан' }}</p>
+        <p><strong>Телефон:</strong> {{ profile.phone || 'Не указан' }}</p>
+        <p><strong>Полнота профиля:</strong> {{ profile.profile_completeness || 0 }}%</p>
       </div>
 
-      <!-- Образование -->
       <div class="card">
         <h2>Образование</h2>
-        <p><strong>Университет:</strong> Карагандский Индустриальный Университет</p>
-        <p><strong>Программа:</strong> {{ profileData.educationProgram || 'Не указана' }}</p>
+        <p><strong>Университет:</strong> {{ profile.university || 'Карагандинский Индустриальный Университет' }}</p>
+        <p><strong>Год окончания:</strong> {{ profile.grad_year || 'Не указан' }}</p>
+        <p><strong>Программа:</strong> {{ getProgramName(profile.program_id) }}</p>
       </div>
 
-      <!-- Опыт работы -->
       <div class="card">
         <h2>Опыт работы</h2>
-        <div v-for="(exp, i) in [profileData.experience1, profileData.experience2]" :key="i" v-if="exp && (exp.company || exp.position)" class="experience-item">
-          <strong>Место работы {{ i+1 }}</strong><br>
-          <strong>{{ exp.company }}</strong> — {{ exp.position }}<br>
-          <small>{{ exp.period }}</small>
-          <p v-if="exp.description">{{ exp.description }}</p>
+        <div v-if="profile.experiences && profile.experiences.length > 0">
+          <div v-for="(exp, idx) in profile.experiences" :key="idx" class="experience-item">
+            <strong>{{ exp.company }}</strong> — {{ exp.position }}
+            <br>
+            <small v-if="exp.start_date || exp.end_date">
+              {{ exp.start_date || '?' }} — {{ exp.end_date || 'настоящее время' }}
+              <span v-if="exp.is_internship" class="internship-badge">Стажировка</span>
+            </small>
+            <p v-if="exp.description">{{ exp.description }}</p>
+          </div>
         </div>
-        <p v-if="!profileData.experience1?.company && !profileData.experience2?.company" class="empty">Опыт работы не добавлен</p>
+        <p v-else class="empty">Опыт работы не добавлен</p>
       </div>
 
-      <!-- Сертификаты -->
       <div class="card">
-        <h2>Сертификаты и достижения</h2>
-        <p class="pre-wrap">{{ profileData.certificates || 'Не добавлены' }}</p>
+        <h2>Навыки</h2>
+        <div class="skills-list">
+          <span v-for="(skill, idx) in profile.skills" :key="idx" class="skill-tag">
+            {{ skill.name }} ({{ getSkillLevel(skill.level) }})
+          </span>
+        </div>
+        <p v-if="!profile.skills || profile.skills.length === 0" class="empty">Навыки не указаны</p>
       </div>
 
-      <!-- Навыки -->
-      <div class="card">
-        <h2>Профессиональные навыки</h2>
-        <p class="pre-wrap">{{ profileData.skills || 'Не указаны' }}</p>
-      </div>
-
-      <!-- Личные качества -->
       <div class="card">
         <h2>Личные качества</h2>
-        <p class="pre-wrap">{{ profileData.personalQualities || 'Не указаны' }}</p>
+        <p class="pre-wrap">{{ profile.personal_qualities || 'Не указаны' }}</p>
       </div>
     </div>
 
@@ -103,17 +65,88 @@ onMounted(loadProfile)
   </div>
 </template>
 
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
+
+const authStore = useAuthStore()
+const router = useRouter()
+const loading = ref(true)
+const profile = ref({})
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+
+const fullName = computed(() => {
+  const parts = [profile.value.last_name, profile.value.first_name, profile.value.middle_name]
+  return parts.filter(p => p && p !== 'null').join(' ') || 'Не указано'
+})
+
+const getSkillLevel = (level) => {
+  const levels = {
+    beginner: 'Начинающий',
+    intermediate: 'Средний',
+    advanced: 'Продвинутый'
+  }
+  return levels[level] || level
+}
+
+const getProgramName = (programId) => {
+  const programs = {
+    1: 'Информационные технологии (IT-21)',
+    2: 'Экономика (EC-21)',
+    3: 'Менеджмент (MG-21)'
+  }
+  return programs[programId] || 'Не выбрана'
+}
+
+const loadProfile = async () => {
+  loading.value = true
+  try {
+    const response = await fetch(`${API_BASE}/api/resume/profile`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        await authStore.logout()
+        router.push('/login')
+        return
+      }
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    profile.value = await response.json()
+    console.log('Профиль загружен:', profile.value)
+
+  } catch (err) {
+    console.error('Ошибка загрузки профиля:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadProfile()
+})
+</script>
+
 <style scoped>
 .profile-page {
   padding: 2rem;
   max-width: 1100px;
   margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #f8fafc 100%);
 }
 
 .page-title {
   color: #1e3a8a;
   margin-bottom: 2rem;
   text-align: center;
+  font-size: 2rem;
 }
 
 .profile-content {
@@ -127,6 +160,11 @@ onMounted(loadProfile)
   padding: 2rem;
   border-radius: 16px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
 }
 
 .card h2 {
@@ -134,17 +172,49 @@ onMounted(loadProfile)
   margin-bottom: 1.2rem;
   border-bottom: 2px solid #e0f2fe;
   padding-bottom: 10px;
+  font-size: 1.3rem;
+}
+
+.card p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
 }
 
 .experience-item {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .experience-item:last-child {
   border-bottom: none;
   margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.internship-badge {
+  display: inline-block;
+  background: #fef3c7;
+  color: #d97706;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  margin-left: 8px;
+}
+
+.skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.skill-tag {
+  background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: #1e3a8a;
+  font-weight: 500;
 }
 
 .empty {
@@ -164,18 +234,51 @@ onMounted(loadProfile)
 
 .edit-btn {
   padding: 14px 32px;
-  background: #1e40af;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
   color: white;
   border: none;
   border-radius: 12px;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s;
+}
+
+.edit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
 }
 
 .loading {
   text-align: center;
-  font-size: 1.2rem;
-  color: #64748b;
   padding: 3rem;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 1rem;
+  }
+
+  .card {
+    padding: 1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
 }
 </style>

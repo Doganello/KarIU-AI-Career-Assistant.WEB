@@ -16,7 +16,8 @@ const router = createRouter({
     ]
 })
 
-router.beforeEach(async (to, from, next) => {
+// Исправленный guards - без next()
+router.beforeEach(async (to, from) => {
     const authStore = useAuthStore()
 
     // Если не проверяли аутентификацию, проверяем
@@ -25,12 +26,14 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-        next('/login')
-    } else if ((to.path === '/login' || to.path === '/register') && authStore.isAuthenticated) {
-        next('/dashboard')
-    } else {
-        next()
+        return '/login'
     }
+
+    if ((to.path === '/login' || to.path === '/register') && authStore.isAuthenticated) {
+        return '/dashboard'
+    }
+
+    return true
 })
 
 export default router
