@@ -1,16 +1,21 @@
 <script setup>
-import { RouterView } from 'vue-router'
+import { RouterView, useRouter } from 'vue-router'
 import Header from './components/layout/Header.vue'
 import Sidebar from './components/layout/Sidebar.vue'
 import { useAuthStore } from './stores/auth'
+import { onMounted } from 'vue'
 
-// Инициализация store
 const authStore = useAuthStore()
+const router = useRouter()
+
+onMounted(async () => {
+  // Проверяем аутентификацию при загрузке приложения
+  await authStore.checkAuth()
+})
 </script>
 
 <template>
   <div class="app">
-    <!-- Авторизованный пользователь -->
     <template v-if="authStore.isAuthenticated">
       <Header />
       <div class="main-layout">
@@ -21,7 +26,6 @@ const authStore = useAuthStore()
       </div>
     </template>
 
-    <!-- Страницы авторизации (логин/регистрация) -->
     <template v-else>
       <RouterView />
     </template>
@@ -46,12 +50,16 @@ const authStore = useAuthStore()
   background: #f8fafc;
 }
 
-/* Скроллбар */
 .content-area::-webkit-scrollbar {
   width: 8px;
 }
+
 .content-area::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
+}
+
+.content-area::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 </style>

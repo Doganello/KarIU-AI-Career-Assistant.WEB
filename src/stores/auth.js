@@ -1,6 +1,5 @@
 ﻿import { defineStore } from 'pinia'
 
-// API_BASE берётся из .env фронтенда (VITE_API_BASE)
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
 export const useAuthStore = defineStore('auth', {
@@ -17,7 +16,7 @@ export const useAuthStore = defineStore('auth', {
                 const response = await fetch(`${API_BASE}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
+                    credentials: 'include',  // ← КЛЮЧЕВОЙ параметр для кук
                     body: JSON.stringify({ email, password })
                 })
 
@@ -27,9 +26,13 @@ export const useAuthStore = defineStore('auth', {
                 }
 
                 const data = await response.json()
-                this.user = data
-                this.isAuthenticated = true
+
+                // После успешного логина проверяем аутентификацию
+                await this.checkAuth()
+
                 return data
+            } catch (error) {
+                throw error
             } finally {
                 this.loading = false
             }
@@ -41,8 +44,11 @@ export const useAuthStore = defineStore('auth', {
                 const response = await fetch(`${API_BASE}/api/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify(userData)
+                    credentials: 'include',  // ← КЛЮЧЕВОЙ параметр для кук
+                    body: JSON.stringify({
+                        email: userData.email,
+                        password: userData.password
+                    })
                 })
 
                 if (!response.ok) {
@@ -51,8 +57,10 @@ export const useAuthStore = defineStore('auth', {
                 }
 
                 const data = await response.json()
-                this.user = data
-                this.isAuthenticated = true
+
+                // Проверяем аутентификацию
+                await this.checkAuth()
+
                 return data
             } finally {
                 this.loading = false
@@ -62,16 +70,21 @@ export const useAuthStore = defineStore('auth', {
         async checkAuth() {
             try {
                 const response = await fetch(`${API_BASE}/api/auth/me`, {
-                    credentials: 'include'
+                    credentials: 'include'  // ← Отправляем куки
                 })
 
-                if (!response.ok) throw new Error()
+                if (!response.ok) {
+                    throw new Error('Not authenticated')
+                }
 
-                this.user = await response.json()
+                const userData = await response.json()
+                this.user = userData
                 this.isAuthenticated = true
-            } catch {
+                return true
+            } catch (error) {
                 this.user = null
                 this.isAuthenticated = false
+                return false
             }
         },
 
@@ -79,7 +92,7 @@ export const useAuthStore = defineStore('auth', {
             try {
                 await fetch(`${API_BASE}/api/auth/logout`, {
                     method: 'POST',
-                    credentials: 'include'
+                    credentials: 'include'  // ← Отправляем куки для удаления
                 })
             } catch (e) {
                 console.warn('Logout request failed', e)
