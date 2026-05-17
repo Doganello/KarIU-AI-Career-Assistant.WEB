@@ -16,7 +16,7 @@ export const useAuthStore = defineStore('auth', {
                 const response = await fetch(`${API_BASE}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',  // ← КЛЮЧЕВОЙ параметр для кук
+                    credentials: 'include',
                     body: JSON.stringify({ email, password })
                 })
 
@@ -26,13 +26,8 @@ export const useAuthStore = defineStore('auth', {
                 }
 
                 const data = await response.json()
-
-                // После успешного логина проверяем аутентификацию
                 await this.checkAuth()
-
                 return data
-            } catch (error) {
-                throw error
             } finally {
                 this.loading = false
             }
@@ -44,7 +39,7 @@ export const useAuthStore = defineStore('auth', {
                 const response = await fetch(`${API_BASE}/api/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',  // ← КЛЮЧЕВОЙ параметр для кук
+                    credentials: 'include',
                     body: JSON.stringify({
                         email: userData.email,
                         password: userData.password
@@ -56,12 +51,8 @@ export const useAuthStore = defineStore('auth', {
                     throw new Error(errorData.detail || 'Ошибка регистрации')
                 }
 
-                const data = await response.json()
-
-                // Проверяем аутентификацию
                 await this.checkAuth()
-
-                return data
+                return await response.json()
             } finally {
                 this.loading = false
             }
@@ -70,15 +61,14 @@ export const useAuthStore = defineStore('auth', {
         async checkAuth() {
             try {
                 const response = await fetch(`${API_BASE}/api/auth/me`, {
-                    credentials: 'include'  // ← Отправляем куки
+                    credentials: 'include'
                 })
 
                 if (!response.ok) {
                     throw new Error('Not authenticated')
                 }
 
-                const userData = await response.json()
-                this.user = userData
+                this.user = await response.json()
                 this.isAuthenticated = true
                 return true
             } catch (error) {
@@ -92,7 +82,7 @@ export const useAuthStore = defineStore('auth', {
             try {
                 await fetch(`${API_BASE}/api/auth/logout`, {
                     method: 'POST',
-                    credentials: 'include'  // ← Отправляем куки для удаления
+                    credentials: 'include'
                 })
             } catch (e) {
                 console.warn('Logout request failed', e)

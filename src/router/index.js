@@ -16,11 +16,9 @@ const router = createRouter({
     ]
 })
 
-// Исправленный guards - без next()
-router.beforeEach(async (to, from) => {
+router.beforeEach(async (to) => {
     const authStore = useAuthStore()
 
-    // Если не проверяли аутентификацию, проверяем
     if (!authStore.isAuthenticated && authStore.user === null) {
         await authStore.checkAuth()
     }

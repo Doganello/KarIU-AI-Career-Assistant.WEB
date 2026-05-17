@@ -21,8 +21,8 @@
       <div class="card">
         <h2>Образование</h2>
         <p><strong>Университет:</strong> {{ profile.university || 'Карагандинский Индустриальный Университет' }}</p>
+        <p><strong>Образовательная программа:</strong> {{ programName || 'Не выбрана' }}</p>
         <p><strong>Год окончания:</strong> {{ profile.grad_year || 'Не указан' }}</p>
-        <p><strong>Программа:</strong> {{ getProgramName(profile.program_id) }}</p>
       </div>
 
       <div class="card">
@@ -43,17 +43,14 @@
 
       <div class="card">
         <h2>Навыки</h2>
-        <div class="skills-list">
-          <span v-for="(skill, idx) in profile.skills" :key="idx" class="skill-tag">
-            {{ skill.name }} ({{ getSkillLevel(skill.level) }})
-          </span>
-        </div>
-        <p v-if="!profile.skills || profile.skills.length === 0" class="empty">Навыки не указаны</p>
+        <p v-if="skillsText" class="skills-text">{{ skillsText }}</p>
+        <p v-else class="empty">Навыки не указаны</p>
       </div>
 
       <div class="card">
         <h2>Личные качества</h2>
-        <p class="pre-wrap">{{ profile.personal_qualities || 'Не указаны' }}</p>
+        <p v-if="profile.personal_qualities" class="personal-qualities-text">{{ profile.personal_qualities }}</p>
+        <p v-else class="empty">Личные качества не указаны</p>
       </div>
     </div>
 
@@ -74,6 +71,7 @@ const authStore = useAuthStore()
 const router = useRouter()
 const loading = ref(true)
 const profile = ref({})
+const programs = ref([])
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
@@ -82,22 +80,33 @@ const fullName = computed(() => {
   return parts.filter(p => p && p !== 'null').join(' ') || 'Не указано'
 })
 
-const getSkillLevel = (level) => {
-  const levels = {
-    beginner: 'Начинающий',
-    intermediate: 'Средний',
-    advanced: 'Продвинутый'
-  }
-  return levels[level] || level
-}
+const programName = computed(() => {
+  if (!profile.value.program_id) return null
+  const program = programs.value.find(p => p.id === profile.value.program_id)
+  return program ? `${program.code} - ${program.name}` : null
+})
 
-const getProgramName = (programId) => {
-  const programs = {
-    1: 'Информационные технологии (IT-21)',
-    2: 'Экономика (EC-21)',
-    3: 'Менеджмент (MG-21)'
+const skillsText = computed(() => {
+  if (profile.value.skills && profile.value.skills.length > 0) {
+    return profile.value.skills.map(s => s.name).join(', ')
   }
-  return programs[programId] || 'Не выбрана'
+  return null
+})
+
+const loadPrograms = async () => {
+  try {
+    const response = await fetch(`${API_BASE}/api/resume/educational-programs`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    })
+
+    if (response.ok) {
+      programs.value = await response.json()
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки программ:', err)
+  }
 }
 
 const loadProfile = async () => {
@@ -119,7 +128,6 @@ const loadProfile = async () => {
     }
 
     profile.value = await response.json()
-    console.log('Профиль загружен:', profile.value)
 
   } catch (err) {
     console.error('Ошибка загрузки профиля:', err)
@@ -130,6 +138,7 @@ const loadProfile = async () => {
 
 onMounted(() => {
   loadProfile()
+  loadPrograms()
 })
 </script>
 
@@ -138,7 +147,7 @@ onMounted(() => {
   padding: 2rem;
   max-width: 1100px;
   margin: 0 auto;
-  min-height: 100vh;
+  min-height: calc(100vh - 70px);
   background: linear-gradient(135deg, #f5f7fa 0%, #f8fafc 100%);
 }
 
@@ -202,29 +211,19 @@ onMounted(() => {
   margin-left: 8px;
 }
 
-.skills-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.skill-tag {
-  background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
-  padding: 0.4rem 1rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  color: #1e3a8a;
-  font-weight: 500;
+.skills-text,
+.personal-qualities-text {
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  color: #1e293b;
+  line-height: 1.6;
+  margin-top: 0.5rem;
 }
 
 .empty {
   color: #94a3b8;
   font-style: italic;
-}
-
-.pre-wrap {
-  white-space: pre-wrap;
-  line-height: 1.6;
 }
 
 .actions {

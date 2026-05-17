@@ -18,24 +18,23 @@
       </header>
 
       <div class="resume-body" v-if="!loading">
-        <!-- Основная информация -->
         <section class="section">
           <h2>Основная информация <span class="required-mark">*</span></h2>
 
           <div class="form-row">
             <div class="form-group required">
               <label>Фамилия <span class="required-star">*</span></label>
-              <input v-model="form.last_name" type="text" class="input-field" placeholder="Введите фамилию" />
+              <input v-model="form.last_name" type="text" class="input-field" />
             </div>
 
             <div class="form-group required">
               <label>Имя <span class="required-star">*</span></label>
-              <input v-model="form.first_name" type="text" class="input-field" placeholder="Введите имя" />
+              <input v-model="form.first_name" type="text" class="input-field" />
             </div>
 
             <div class="form-group">
               <label>Отчество</label>
-              <input v-model="form.middle_name" type="text" class="input-field" placeholder="Введите отчество (необязательно)" />
+              <input v-model="form.middle_name" type="text" class="input-field" />
             </div>
           </div>
 
@@ -47,41 +46,40 @@
 
             <div class="form-group required">
               <label>Город <span class="required-star">*</span></label>
-              <input v-model="form.city" type="text" class="input-field" placeholder="Например: Темиртау" />
+              <input v-model="form.city" type="text" class="input-field" />
             </div>
 
             <div class="form-group required">
               <label>Телефон <span class="required-star">*</span></label>
-              <input v-model="form.phone" type="tel" class="input-field" placeholder="+7 (700) 123-45-67" />
+              <input v-model="form.phone" type="tel" class="input-field" />
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group required">
-              <label>Специальность / Профессия <span class="required-star">*</span></label>
-              <input v-model="form.specialty" type="text" class="input-field" placeholder="Например: Frontend Developer" />
+              <label>Специальность <span class="required-star">*</span></label>
+              <input v-model="form.specialty" type="text" class="input-field" />
             </div>
 
             <div class="form-group">
               <label>Год окончания</label>
-              <input v-model="form.grad_year" type="number" class="input-field" placeholder="Например: 2024" />
+              <input v-model="form.grad_year" type="number" class="input-field" />
             </div>
 
             <div class="form-group">
               <label>Образовательная программа</label>
-              <select v-model="form.program_id" class="input-field">
-                <option :value="null">Выберите программу</option>
-                <option :value="1">Информационные технологии (IT-21)</option>
-                <option :value="2">Экономика (EC-21)</option>
-                <option :value="3">Менеджмент (MG-21)</option>
+              <select v-model="form.program_id" class="input-field program-select">
+                <option :value="null">📚 Выберите программу</option>
+                <option v-for="program in programs" :key="program.id" :value="program.id">
+                  {{ program.code }} - {{ program.name }}
+                </option>
               </select>
             </div>
           </div>
         </section>
 
-        <!-- Опыт работы (необязательно) -->
         <section class="section">
-          <h2>Опыт работы <span class="optional-mark">(необязательно)</span></h2>
+          <h2>Опыт работы</h2>
 
           <div v-for="(exp, index) in experiences" :key="index" class="experience-item">
             <div class="experience-header">
@@ -92,12 +90,12 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Компания</label>
-                <input v-model="exp.company" type="text" class="input-field" placeholder="Название компании" />
+                <input v-model="exp.company" type="text" class="input-field" />
               </div>
 
               <div class="form-group">
                 <label>Должность</label>
-                <input v-model="exp.position" type="text" class="input-field" placeholder="Должность" />
+                <input v-model="exp.position" type="text" class="input-field" />
               </div>
             </div>
 
@@ -116,52 +114,38 @@
             <div class="form-group">
               <label class="checkbox-label">
                 <input v-model="exp.is_internship" type="checkbox" />
-                Это была стажировка
+                Стажировка
               </label>
             </div>
 
             <div class="form-group">
-              <label>Описание обязанностей</label>
-              <textarea v-model="exp.description" class="input-field" rows="3" placeholder="Чем вы занимались? (необязательно)"></textarea>
+              <label>Описание</label>
+              <textarea v-model="exp.description" class="input-field" rows="3"></textarea>
             </div>
           </div>
 
           <button type="button" @click="addExperience" class="add-btn">+ Добавить место работы</button>
         </section>
 
-        <!-- Навыки (необязательно) -->
         <section class="section">
-          <h2>Ключевые навыки <span class="optional-mark">(необязательно)</span></h2>
-          <div class="skills-container">
-            <div v-for="(skill, index) in skills" :key="index" class="skill-item">
-              <input v-model="skill.name" type="text" class="skill-input" placeholder="Например: Python, JavaScript, Figma" />
-              <select v-model="skill.level" class="skill-level">
-                <option value="beginner">Начинающий</option>
-                <option value="intermediate">Средний</option>
-                <option value="advanced">Продвинутый</option>
-              </select>
-              <button type="button" @click="removeSkill(index)" class="remove-skill-btn">✕</button>
-            </div>
-            <button type="button" @click="addSkill" class="add-skill-btn">+ Добавить навык</button>
-          </div>
+          <h2>Ключевые навыки</h2>
+          <textarea v-model="form.skills_text" class="input-field" rows="4"></textarea>
         </section>
 
-        <!-- Личные качества (необязательно) -->
         <section class="section">
-          <h2>Личные качества <span class="optional-mark">(необязательно)</span></h2>
-          <textarea v-model="form.personal_qualities" class="input-field" rows="4"
-                    placeholder="Ответственность, коммуникабельность, целеустремленность..."></textarea>
+          <h2>Личные качества</h2>
+          <textarea v-model="form.personal_qualities" class="input-field" rows="4"></textarea>
         </section>
       </div>
 
       <div v-else class="loading">
         <div class="spinner"></div>
-        <p>Загрузка профиля...</p>
+        <p>Загрузка...</p>
       </div>
 
       <footer class="resume-footer">
         <p>Карагандинский Индустриальный Университет</p>
-        <p>8 (7213) 91-56-26 | ✉️ info@tttu.edu.kz | г. Темиртау, пр. Республики 30</p>
+        <p>8 (7213) 91-56-26 | info@tttu.edu.kz | Темиртау, пр. Республики 30</p>
       </footer>
     </div>
   </div>
@@ -179,7 +163,6 @@ const saving = ref(false)
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
-// Форма с пустыми значениями
 const form = reactive({
   last_name: '',
   first_name: '',
@@ -190,11 +173,12 @@ const form = reactive({
   specialty: '',
   program_id: null,
   grad_year: null,
-  personal_qualities: ''
+  personal_qualities: '',
+  skills_text: ''
 })
 
 const experiences = ref([])
-const skills = ref([])
+const programs = ref([])
 
 const addExperience = () => {
   experiences.value.push({
@@ -211,15 +195,20 @@ const removeExperience = (index) => {
   experiences.value.splice(index, 1)
 }
 
-const addSkill = () => {
-  skills.value.push({
-    name: '',
-    level: 'intermediate'
-  })
-}
+const loadPrograms = async () => {
+  try {
+    const response = await fetch(`${API_BASE}/api/resume/educational-programs`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    })
 
-const removeSkill = (index) => {
-  skills.value.splice(index, 1)
+    if (response.ok) {
+      programs.value = await response.json()
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки программ:', err)
+  }
 }
 
 const loadResumeData = async () => {
@@ -242,7 +231,6 @@ const loadResumeData = async () => {
 
     const data = await response.json()
 
-    // Заполняем только если данные есть
     form.last_name = data.last_name || ''
     form.first_name = data.first_name || ''
     form.middle_name = data.middle_name || ''
@@ -254,13 +242,13 @@ const loadResumeData = async () => {
     form.grad_year = data.grad_year || null
     form.personal_qualities = data.personal_qualities || ''
 
-    experiences.value = data.experiences && data.experiences.length > 0
-        ? data.experiences
-        : []
+    if (data.skills && data.skills.length > 0) {
+      form.skills_text = data.skills.map(s => s.name).join(', ')
+    } else {
+      form.skills_text = ''
+    }
 
-    skills.value = data.skills && data.skills.length > 0
-        ? data.skills
-        : []
+    experiences.value = data.experiences || []
 
   } catch (err) {
     console.error('Ошибка загрузки:', err)
@@ -270,9 +258,8 @@ const loadResumeData = async () => {
 }
 
 const saveResume = async () => {
-  // Проверяем обязательные поля
   if (!form.last_name || !form.first_name || !form.phone || !form.city || !form.specialty) {
-    alert('❌ Пожалуйста, заполните обязательные поля: Фамилия, Имя, Телефон, Город, Специальность')
+    alert('Заполните обязательные поля: Фамилия, Имя, Телефон, Город, Специальность')
     return
   }
 
@@ -281,30 +268,26 @@ const saveResume = async () => {
   try {
     const payload = {}
 
-    // Обязательные поля
     payload.last_name = form.last_name
     payload.first_name = form.first_name
     payload.phone = form.phone
     payload.city = form.city
     payload.specialty = form.specialty
 
-    // Необязательные поля - добавляем только если заполнены
     if (form.middle_name) payload.middle_name = form.middle_name
     if (form.birth_date) payload.birth_date = form.birth_date
-    if (form.personal_qualities) payload.personal_qualities = form.personal_qualities
-    if (form.program_id) payload.program_id = form.program_id
+    payload.personal_qualities = form.personal_qualities || ''
     if (form.grad_year) payload.grad_year = form.grad_year
+    payload.program_id = form.program_id === null ? null : form.program_id
 
-    // Опыт работы - только заполненные
     const validExperiences = experiences.value.filter(exp => exp.company && exp.position)
-    if (validExperiences.length > 0) {
-      payload.experiences = validExperiences
-    }
+    payload.experiences = validExperiences
 
-    // Навыки - только с названием
-    const validSkills = skills.value.filter(skill => skill.name)
-    if (validSkills.length > 0) {
-      payload.skills = validSkills
+    if (form.skills_text && form.skills_text.trim()) {
+      const skillNames = form.skills_text.split(',').map(s => s.trim()).filter(s => s)
+      payload.skills = skillNames.map(name => ({ name, level: 'intermediate' }))
+    } else {
+      payload.skills = []
     }
 
     const response = await fetch(`${API_BASE}/api/resume/profile`, {
@@ -319,12 +302,12 @@ const saveResume = async () => {
       throw new Error(error.detail || 'Ошибка сохранения')
     }
 
-    alert('✅ Резюме успешно сохранено!')
+    alert('Резюме сохранено!')
     await loadResumeData()
 
   } catch (err) {
-    console.error('Ошибка сохранения:', err)
-    alert('❌ Ошибка: ' + err.message)
+    console.error('Ошибка:', err)
+    alert('Ошибка: ' + err.message)
   } finally {
     saving.value = false
   }
@@ -332,6 +315,7 @@ const saveResume = async () => {
 
 onMounted(() => {
   loadResumeData()
+  loadPrograms()
 })
 </script>
 
@@ -412,7 +396,16 @@ onMounted(() => {
   font-size: 1rem;
 }
 
+.resume-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .section {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
   padding: 2rem;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -431,12 +424,6 @@ onMounted(() => {
 .required-mark, .required-star {
   color: #ef4444;
   font-size: 0.9rem;
-}
-
-.optional-mark {
-  color: #94a3b8;
-  font-size: 0.8rem;
-  font-weight: normal;
 }
 
 .form-row {
@@ -477,6 +464,21 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.program-select {
+  cursor: pointer;
+  background-color: white;
+  text-align: left;
+}
+
+.program-select:hover {
+  border-color: #3b82f6;
+}
+
+.program-select option {
+  padding: 10px;
+  text-align: left;
+}
+
 .experience-item {
   background: #f8fafc;
   padding: 1.5rem;
@@ -509,7 +511,7 @@ onMounted(() => {
   cursor: pointer;
 }
 
-.add-btn, .remove-btn, .add-skill-btn {
+.add-btn, .remove-btn {
   padding: 8px 16px;
   border: none;
   border-radius: 8px;
@@ -518,12 +520,12 @@ onMounted(() => {
   transition: all 0.2s;
 }
 
-.add-btn, .add-skill-btn {
+.add-btn {
   background: #10b981;
   color: white;
 }
 
-.add-btn:hover, .add-skill-btn:hover {
+.add-btn:hover {
   background: #059669;
 }
 
@@ -534,41 +536,6 @@ onMounted(() => {
 
 .remove-btn:hover {
   background: #dc2626;
-}
-
-.skills-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.skill-item {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.skill-input {
-  flex: 2;
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-}
-
-.skill-level {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-}
-
-.remove-skill-btn {
-  padding: 8px 12px;
-  background: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
 }
 
 .loading {
@@ -614,14 +581,6 @@ onMounted(() => {
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
-  }
-
-  .skill-item {
-    flex-direction: column;
-  }
-
-  .skill-input, .skill-level {
-    width: 100%;
   }
 }
 </style>

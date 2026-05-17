@@ -16,24 +16,25 @@ const authStore = useAuthStore()
 
     <div class="university-contacts">
       <span>📞 8 (7213) 91-56-26</span>
+      <span>✉️ info@ttu.edu.kz</span>
       <span>📍 г. Темиртау, пр. Республики 30</span>
     </div>
 
     <div v-if="authStore.user" class="user-info">
-      <span class="user-name">{{ authStore.user.name || authStore.user.fullName }}</span>
+      <span class="user-name">{{ authStore.user?.email || 'Пользователь' }}</span>
     </div>
   </header>
 </template>
 
 <style scoped>
 .header {
-  background: white;
+  background: #0a1e5c;
   padding: 0 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  height: 70px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  height: 80px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -49,28 +50,32 @@ const authStore = useAuthStore()
 .logo {
   height: 54px;
   width: auto;
+  background: white;
+  border-radius: 12px;
+  padding: 4px 8px;
+  object-fit: contain;
 }
 
 .title h1 {
   margin: 0;
   font-size: 1.5rem;
-  color: #1e40af;
+  color: white;
   font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
   margin: 0;
-  font-size: 0.9rem;
-  color: #64748b;
+  font-size: 0.85rem;
+  color: #cbd5e6;
 }
 
-/* Изменено: теперь в одну строку */
 .university-contacts {
   display: flex;
   align-items: center;
-  gap: 20px;
-  font-size: 0.9rem;
-  color: #475569;
+  gap: 24px;
+  font-size: 0.85rem;
+  color: white;
   white-space: nowrap;
 }
 
@@ -78,31 +83,62 @@ const authStore = useAuthStore()
   display: flex;
   align-items: center;
   gap: 6px;
+  color: #e2e8f0;
 }
 
 .user-info {
   display: flex;
   align-items: center;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 8px 18px;
+  border-radius: 40px;
 }
 
 .user-name {
-  font-weight: 600;
-  color: #1e3a8a;
-  font-size: 1.1rem;
+  font-weight: 500;
+  color: white;
+  font-size: 0.9rem;
   white-space: nowrap;
 }
 
 /* Адаптивность */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .university-contacts {
     gap: 15px;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+  }
+
+  .title h1 {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .university-contacts span:last-child {
+    display: none;
   }
 }
 
 @media (max-width: 768px) {
+  .header {
+    padding: 0 1rem;
+    height: 70px;
+  }
+
   .university-contacts {
-    display: none; /* скрываем на маленьких экранах, чтобы не было тесно */
+    display: none;
+  }
+
+  .title h1 {
+    font-size: 1rem;
+  }
+
+  .subtitle {
+    display: none;
+  }
+
+  .logo {
+    height: 45px;
   }
 }
 </style>
