@@ -1,9 +1,14 @@
 ﻿<template>
   <div class="interview-page">
-    <h1 class="page-title">🎯 Симулятор собеседования</h1>
+    <div class="interview-header">
+      <h1 class="page-title">🎯 Симулятор собеседования</h1>
+      <button @click="resetInterview" class="reset-btn" title="Начать заново">
+        🔄 Заново
+      </button>
+    </div>
 
     <!-- Начало собеседования -->
-    <div v-if="!started" class="setup-card">
+    <div v-if="!started && !hasHistory" class="setup-card">
       <h2>Настройки собеседования</h2>
 
       <div class="form-group">
@@ -16,8 +21,17 @@
       </div>
 
       <div class="form-group">
+        <label>Сложность собеседования:</label>
+        <select v-model="settings.difficulty" class="input-field">
+          <option value="easy">🟢 Лёгкий (базовые вопросы)</option>
+          <option value="medium">🟡 Средний (стандартные вопросы)</option>
+          <option value="hard">🔴 Сложный (экспертные вопросы)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
         <label>Вакансия (опционально):</label>
-        <input v-model="settings.vacancy" type="text" class="input-field" placeholder="Например: Junior Python Developer">
+        <input v-model="settings.vacancy" type="text" class="input-field" placeholder="Например: Фельдшер скорой помощи">
       </div>
 
       <div class="form-group">
@@ -37,12 +51,12 @@
     <!-- Процесс собеседования -->
     <div v-else class="interview-container">
       <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: `${(currentQuestion / maxQuestions) * 100}%` }"></div>
+        <div class="progress-fill" :style="{ width: `${progressPercent}%` }"></div>
         <span class="progress-text">{{ currentQuestion }} / {{ maxQuestions }} вопросов</span>
       </div>
 
       <div class="messages-container">
-        <div class="messages">
+        <div class="messages" ref="messagesContainer">
           <div v-for="(msg, idx) in messages" :key="idx" :class="['message', msg.role]">
             <div class="message-content">
               <span class="message-icon">{{ msg.role === 'user' ? '👤' : '🤖' }}</span>
@@ -62,6 +76,7 @@
         </div>
       </div>
 
+      <!-- Поле ввода ответа - отключается после завершения собеседования -->
       <div v-if="!finished" class="answer-area">
         <textarea
             v-model="answer"
@@ -69,44 +84,64 @@
             placeholder="Напишите ваш ответ здесь..."
             class="answer-input"
             rows="4"
+            :disabled="finished"
         ></textarea>
-        <button @click="sendAnswer" class="send-btn" :disabled="loading">
+        <button @click="sendAnswer" class="send-btn" :disabled="loading || finished">
           ✉️ Отправить ответ
         </button>
         <p class="hint">💡 Подсказка: Ctrl+Enter для отправки</p>
       </div>
 
+      <!-- Блок после завершения собеседования -->
       <div v-else class="finished-card">
-        <h2>🎉 Собеседование завершено!</h2>
-        <button @click="resetInterview" class="restart-btn">
-          🔄 Начать новое собеседование
-        </button>
+        <div class="finished-icon">🎉</div>
+        <h2>Собеседование завершено!</h2>
+        <p class="finished-message">Вы успешно прошли собеседование. Финальный отчёт представлен выше.</p>
+        <div class="finished-actions">
+          <button @click="resetAndStartNew" class="restart-btn">
+            🔄 Начать новое собеседование
+          </button>
+          <button @click="clearAndGoToSettings" class="settings-btn">
+            ⚙️ Изменить настройки
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { marked } from 'marked'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+
+// Ключ для localStorage
+const STORAGE_KEY = 'kariu_interview_history'
+const STORAGE_SETTINGS_KEY = 'kariu_interview_settings'
 
 const started = ref(false)
 const finished = ref(false)
 const loading = ref(false)
 const currentQuestion = ref(0)
 const maxQuestions = 6
+const sessionId = ref('')
+const messages = ref([])
+const answer = ref('')
+const messagesContainer = ref(null)
 
 const settings = ref({
   type: 'hr',
+  difficulty: 'medium',
   vacancy: '',
   lang: 'ru'
 })
 
-const messages = ref([])
-const answer = ref('')
-const sessionId = ref('')
+const hasHistory = computed(() => messages.value.length > 0)
+
+const progressPercent = computed(() => {
+  return (currentQuestion.value / maxQuestions) * 100
+})
 
 marked.setOptions({
   breaks: true,
@@ -123,8 +158,95 @@ const renderMarkdown = (content) => {
   }
 }
 
+const scrollToBottom = async () => {
+  await nextTick()
+  if (messagesContainer.value) {
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  }
+}
+
+// Сохранение истории в localStorage
+const saveHistory = () => {
+  try {
+    const data = {
+      messages: messages.value,
+      sessionId: sessionId.value,
+      currentQuestion: currentQuestion.value,
+      started: started.value,
+      finished: finished.value,
+      settings: settings.value
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  } catch (e) {
+    console.error('Failed to save interview history:', e)
+  }
+}
+
+// Загрузка истории из localStorage
+const loadHistory = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      const data = JSON.parse(saved)
+      if (data.messages && data.messages.length > 0) {
+        messages.value = data.messages
+        sessionId.value = data.sessionId || ''
+        currentQuestion.value = data.currentQuestion || 0
+        started.value = data.started || false
+        finished.value = data.finished || false
+        if (data.settings) {
+          settings.value = data.settings
+        }
+        scrollToBottom()
+        return true
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load interview history:', e)
+  }
+  return false
+}
+
+// Очистка истории
+const clearHistory = () => {
+  localStorage.removeItem(STORAGE_KEY)
+  localStorage.removeItem(STORAGE_SETTINGS_KEY)
+}
+
+// Сохранение настроек
+const saveSettings = () => {
+  try {
+    localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify(settings.value))
+  } catch (e) {
+    console.error('Failed to save settings:', e)
+  }
+}
+
+// Загрузка настроек
+const loadSettings = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_SETTINGS_KEY)
+    if (saved) {
+      const data = JSON.parse(saved)
+      settings.value = data
+    }
+  } catch (e) {
+    console.error('Failed to load settings:', e)
+  }
+}
+
+// Следим за изменениями и сохраняем
+watch([messages, currentQuestion, started, finished], () => {
+  saveHistory()
+}, { deep: true })
+
+watch(settings, () => {
+  saveSettings()
+}, { deep: true })
+
 const startInterview = async () => {
   loading.value = true
+  finished.value = false
 
   try {
     const response = await fetch(`${API_BASE}/api/ai/interview/start`, {
@@ -133,6 +255,7 @@ const startInterview = async () => {
       credentials: 'include',
       body: JSON.stringify({
         interview_type: settings.value.type,
+        difficulty: settings.value.difficulty,
         vacancy: settings.value.vacancy,
         lang: settings.value.lang
       })
@@ -149,8 +272,9 @@ const startInterview = async () => {
       { role: 'bot', content: data.question }
     ]
     started.value = true
-    finished.value = false
     currentQuestion.value = 1
+
+    await scrollToBottom()
 
   } catch (error) {
     console.error('Error:', error)
@@ -161,11 +285,12 @@ const startInterview = async () => {
 }
 
 const sendAnswer = async () => {
-  if (!answer.value.trim() || loading.value) return
+  if (!answer.value.trim() || loading.value || finished.value) return
 
   const userAnswer = answer.value
   messages.value.push({ role: 'user', content: userAnswer })
   answer.value = ''
+  await scrollToBottom()
   loading.value = true
 
   try {
@@ -186,9 +311,14 @@ const sendAnswer = async () => {
     const data = await response.json()
     messages.value.push({ role: 'bot', content: data.response })
     currentQuestion.value++
+    await scrollToBottom()
 
-    // Проверяем, завершено ли собеседование (по наличию финального отчёта)
-    if (data.response.includes('ИТОГИ СОБЕСЕДОВАНИЯ') || data.response.includes('Вердикт')) {
+    // Проверяем, завершено ли собеседование
+    if (data.response.includes('ИТОГИ СОБЕСЕДОВАНИЯ') ||
+        data.response.includes('ФИНАЛЬНЫЙ ОТЧЁТ') ||
+        data.response.includes('Вердикт') ||
+        data.response.includes('Рекомендации') ||
+        currentQuestion.value > maxQuestions) {
       finished.value = true
     }
 
@@ -200,10 +330,24 @@ const sendAnswer = async () => {
     })
   } finally {
     loading.value = false
+    await scrollToBottom()
   }
 }
 
 const resetInterview = () => {
+  if (confirm('Вы уверены, что хотите очистить всю историю собеседования?')) {
+    clearHistory()
+    started.value = false
+    finished.value = false
+    messages.value = []
+    answer.value = ''
+    sessionId.value = ''
+    currentQuestion.value = 0
+  }
+}
+
+const resetAndStartNew = () => {
+  clearHistory()
   started.value = false
   finished.value = false
   messages.value = []
@@ -211,6 +355,24 @@ const resetInterview = () => {
   sessionId.value = ''
   currentQuestion.value = 0
 }
+
+const clearAndGoToSettings = () => {
+  clearHistory()
+  started.value = false
+  finished.value = false
+  messages.value = []
+  answer.value = ''
+  sessionId.value = ''
+  currentQuestion.value = 0
+}
+
+onMounted(() => {
+  loadSettings()
+  const hasSavedHistory = loadHistory()
+  if (!hasSavedHistory) {
+    started.value = false
+  }
+})
 </script>
 
 <style scoped>
@@ -222,11 +384,34 @@ const resetInterview = () => {
   background: linear-gradient(135deg, #f5f7fa 0%, #f8fafc 100%);
 }
 
+.interview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
 .page-title {
   color: #1e3a8a;
-  margin-bottom: 2rem;
-  text-align: center;
   font-size: 2rem;
+  margin: 0;
+}
+
+.reset-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.reset-btn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
 }
 
 .setup-card, .interview-container, .finished-card {
@@ -254,15 +439,17 @@ const resetInterview = () => {
 
 .input-field {
   width: 100%;
-  padding: 12px;
+  padding: 12px 16px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .input-field:focus {
   outline: none;
   border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .start-btn {
@@ -276,6 +463,7 @@ const resetInterview = () => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
+  margin-top: 0.5rem;
 }
 
 .start-btn:hover {
@@ -368,29 +556,6 @@ const resetInterview = () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.message-text h1, .message-text h2, .message-text h3 {
-  margin: 0.5rem 0;
-  color: #1e3a8a;
-}
-
-.message-text p {
-  margin: 0.5rem 0;
-}
-
-.message-text ul, .message-text ol {
-  margin: 0.5rem 0;
-  padding-left: 1.5rem;
-}
-
-.message-text li {
-  margin: 0.25rem 0;
-}
-
-.message-text strong {
-  font-weight: 700;
-  color: #1e40af;
-}
-
 .message-icon {
   font-size: 1.2rem;
   min-width: 28px;
@@ -403,17 +568,24 @@ const resetInterview = () => {
 
 .answer-input {
   width: 100%;
-  padding: 12px;
+  padding: 12px 16px;
   border: 1px solid #d1d5db;
   border-radius: 12px;
   font-size: 1rem;
   resize: vertical;
   margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+.answer-input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
 }
 
 .answer-input:focus {
   outline: none;
   border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .send-btn {
@@ -429,7 +601,13 @@ const resetInterview = () => {
   transition: all 0.3s;
 }
 
-.send-btn:hover {
+.send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.send-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
 }
@@ -443,17 +621,33 @@ const resetInterview = () => {
 
 .finished-card {
   text-align: center;
+  margin-top: 1rem;
+}
+
+.finished-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
 }
 
 .finished-card h2 {
   color: #1e3a8a;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
-.restart-btn {
+.finished-message {
+  color: #64748b;
+  margin-bottom: 2rem;
+}
+
+.finished-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.restart-btn, .settings-btn {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
@@ -462,9 +656,24 @@ const resetInterview = () => {
   transition: all 0.3s;
 }
 
+.restart-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
 .restart-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+}
+
+.settings-btn {
+  background: #6b7280;
+  color: white;
+}
+
+.settings-btn:hover {
+  background: #4b5563;
+  transform: translateY(-2px);
 }
 
 .typing-indicator {
@@ -520,12 +729,30 @@ const resetInterview = () => {
     padding: 1rem;
   }
 
+  .interview-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
   .message-content {
     max-width: 90%;
   }
 
   .setup-card, .interview-container {
     padding: 1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .finished-actions {
+    flex-direction: column;
+  }
+
+  .restart-btn, .settings-btn {
+    width: 100%;
   }
 }
 </style>
