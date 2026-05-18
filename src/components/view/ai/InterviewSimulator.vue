@@ -7,8 +7,19 @@
       </button>
     </div>
 
+    <!-- Проверка заполненности резюме -->
+    <div v-if="!isProfileComplete" class="warning-card">
+      <div class="warning-icon">⚠️</div>
+      <h2>Резюме не заполнено</h2>
+      <p>Для доступа к симулятору собеседования необходимо полностью заполнить резюме.</p>
+      <p class="warning-details">Обязательные поля: Фамилия, Имя, Дата рождения, Телефон, Город, Специальность</p>
+      <button @click="goToResume" class="go-to-resume-btn">
+        📝 Перейти к заполнению резюме
+      </button>
+    </div>
+
     <!-- Начало собеседования -->
-    <div v-if="!started && !hasHistory" class="setup-card">
+    <div v-else-if="!started && !hasHistory" class="setup-card">
       <h2>Настройки собеседования</h2>
 
       <div class="form-group">
@@ -23,15 +34,24 @@
       <div class="form-group">
         <label>Сложность собеседования:</label>
         <select v-model="settings.difficulty" class="input-field">
-          <option value="easy">🟢 Лёгкий (базовые вопросы)</option>
-          <option value="medium">🟡 Средний (стандартные вопросы)</option>
-          <option value="hard">🔴 Сложный (экспертные вопросы)</option>
+          <option value="easy">🟢 Лёгкий</option>
+          <option value="medium">🟡 Средний</option>
+          <option value="hard">🔴 Сложный</option>
         </select>
       </div>
 
-      <div class="form-group">
-        <label>Вакансия (опционально):</label>
-        <input v-model="settings.vacancy" type="text" class="input-field" placeholder="Например: Фельдшер скорой помощи">
+      <div class="form-group required" :class="{ 'error': vacancyError }">
+        <label>Вакансия <span class="required-star">*</span>:</label>
+        <input
+            v-model="settings.vacancy"
+            type="text"
+            class="input-field"
+            placeholder=""
+            @blur="validateVacancy"
+            @input="validateVacancy"
+        />
+        <div v-if="vacancyError" class="error-message">{{ vacancyError }}</div>
+        <div class="hint">Укажите должность, на которую проходите собеседование</div>
       </div>
 
       <div class="form-group">
@@ -43,8 +63,8 @@
         </select>
       </div>
 
-      <button @click="startInterview" class="start-btn" :disabled="loading">
-        🚀 Начать собеседование
+      <button @click="startInterview" class="start-btn" :disabled="loading || !isVacancyValid">
+        {{ loading ? 'Загрузка...' : '🚀 Начать собеседование' }}
       </button>
     </div>
 
@@ -76,7 +96,6 @@
         </div>
       </div>
 
-      <!-- Поле ввода ответа - отключается после завершения собеседования -->
       <div v-if="!finished" class="answer-area">
         <textarea
             v-model="answer"
@@ -84,15 +103,13 @@
             placeholder="Напишите ваш ответ здесь..."
             class="answer-input"
             rows="4"
-            :disabled="finished"
         ></textarea>
-        <button @click="sendAnswer" class="send-btn" :disabled="loading || finished">
+        <button @click="sendAnswer" class="send-btn" :disabled="loading">
           ✉️ Отправить ответ
         </button>
         <p class="hint">💡 Подсказка: Ctrl+Enter для отправки</p>
       </div>
 
-      <!-- Блок после завершения собеседования -->
       <div v-else class="finished-card">
         <div class="finished-icon">🎉</div>
         <h2>Собеседование завершено!</h2>
@@ -112,11 +129,15 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { marked } from 'marked'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
-// Ключ для localStorage
 const STORAGE_KEY = 'kariu_interview_history'
 const STORAGE_SETTINGS_KEY = 'kariu_interview_settings'
 
@@ -129,6 +150,9 @@ const sessionId = ref('')
 const messages = ref([])
 const answer = ref('')
 const messagesContainer = ref(null)
+const vacancyError = ref('')
+const profileData = ref(null)
+const isProfileComplete = ref(false)
 
 const settings = ref({
   type: 'hr',
@@ -138,10 +162,26 @@ const settings = ref({
 })
 
 const hasHistory = computed(() => messages.value.length > 0)
+const progressPercent = computed(() => (currentQuestion.value / maxQuestions) * 100)
+const isVacancyValid = computed(() => settings.value.vacancy.trim().length >= 3 && !vacancyError.value)
 
-const progressPercent = computed(() => {
-  return (currentQuestion.value / maxQuestions) * 100
-})
+// Валидация вакансии
+const validateVacancy = () => {
+  const vacancy = settings.value.vacancy.trim()
+  if (!vacancy) {
+    vacancyError.value = 'Укажите вакансию'
+  } else if (vacancy.length < 3) {
+    vacancyError.value = 'Название вакансии слишком короткое (минимум 3 символа)'
+  } else if (vacancy.length > 100) {
+    vacancyError.value = 'Название вакансии слишком длинное (максимум 100 символов)'
+  } else if (/^\d+$/.test(vacancy)) {
+    vacancyError.value = 'Вакансия не может состоять только из цифр'
+  } else if (/^[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/.test(vacancy)) {
+    vacancyError.value = 'Вакансия не может состоять только из символов'
+  } else {
+    vacancyError.value = ''
+  }
+}
 
 marked.setOptions({
   breaks: true,
@@ -165,7 +205,49 @@ const scrollToBottom = async () => {
   }
 }
 
-// Сохранение истории в localStorage
+const checkProfileCompleteness = async () => {
+  try {
+    const response = await fetch(`${API_BASE}/api/resume/profile`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    })
+
+    if (response.ok) {
+      profileData.value = await response.json()
+
+      // Проверяем все обязательные поля резюме
+      const requiredFields = ['last_name', 'first_name', 'birth_date', 'phone', 'city', 'specialty']
+      const allFieldsFilled = requiredFields.every(field => {
+        const value = profileData.value[field]
+        return value && value.trim() !== ''
+      })
+
+      // Проверяем возраст (не менее 16 лет)
+      let ageValid = true
+      if (profileData.value.birth_date) {
+        const birthYear = new Date(profileData.value.birth_date).getFullYear()
+        const currentYear = new Date().getFullYear()
+        const age = currentYear - birthYear
+        ageValid = age >= 16
+      }
+
+      const hasEducation = profileData.value.program_id !== null || profileData.value.program_master_id !== null
+
+      isProfileComplete.value = allFieldsFilled && ageValid && hasEducation
+    } else {
+      isProfileComplete.value = false
+    }
+  } catch (err) {
+    console.error('Ошибка проверки профиля:', err)
+    isProfileComplete.value = false
+  }
+}
+
+const goToResume = () => {
+  router.push('/resume')
+}
+
 const saveHistory = () => {
   try {
     const data = {
@@ -182,7 +264,6 @@ const saveHistory = () => {
   }
 }
 
-// Загрузка истории из localStorage
 const loadHistory = () => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -207,13 +288,11 @@ const loadHistory = () => {
   return false
 }
 
-// Очистка истории
 const clearHistory = () => {
   localStorage.removeItem(STORAGE_KEY)
   localStorage.removeItem(STORAGE_SETTINGS_KEY)
 }
 
-// Сохранение настроек
 const saveSettings = () => {
   try {
     localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify(settings.value))
@@ -222,7 +301,6 @@ const saveSettings = () => {
   }
 }
 
-// Загрузка настроек
 const loadSettings = () => {
   try {
     const saved = localStorage.getItem(STORAGE_SETTINGS_KEY)
@@ -235,7 +313,6 @@ const loadSettings = () => {
   }
 }
 
-// Следим за изменениями и сохраняем
 watch([messages, currentQuestion, started, finished], () => {
   saveHistory()
 }, { deep: true })
@@ -245,8 +322,10 @@ watch(settings, () => {
 }, { deep: true })
 
 const startInterview = async () => {
+  validateVacancy()
+  if (!settings.value.vacancy.trim() || vacancyError.value) return
+
   loading.value = true
-  finished.value = false
 
   try {
     const response = await fetch(`${API_BASE}/api/ai/interview/start`, {
@@ -262,7 +341,8 @@ const startInterview = async () => {
     })
 
     if (!response.ok) {
-      throw new Error('Ошибка начала собеседования')
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.detail || 'Ошибка начала собеседования')
     }
 
     const data = await response.json()
@@ -272,13 +352,14 @@ const startInterview = async () => {
       { role: 'bot', content: data.question }
     ]
     started.value = true
+    finished.value = false
     currentQuestion.value = 1
 
     await scrollToBottom()
 
   } catch (error) {
     console.error('Error:', error)
-    alert('Ошибка начала собеседования')
+    alert(error.message)
   } finally {
     loading.value = false
   }
@@ -313,12 +394,10 @@ const sendAnswer = async () => {
     currentQuestion.value++
     await scrollToBottom()
 
-    // Проверяем, завершено ли собеседование
-    if (data.response.includes('ИТОГИ СОБЕСЕДОВАНИЯ') ||
+    if (currentQuestion.value > maxQuestions ||
+        data.response.includes('ИТОГИ СОБЕСЕДОВАНИЯ') ||
         data.response.includes('ФИНАЛЬНЫЙ ОТЧЁТ') ||
-        data.response.includes('Вердикт') ||
-        data.response.includes('Рекомендации') ||
-        currentQuestion.value > maxQuestions) {
+        data.response.includes('Вердикт')) {
       finished.value = true
     }
 
@@ -343,6 +422,7 @@ const resetInterview = () => {
     answer.value = ''
     sessionId.value = ''
     currentQuestion.value = 0
+    vacancyError.value = ''
   }
 }
 
@@ -354,6 +434,7 @@ const resetAndStartNew = () => {
   answer.value = ''
   sessionId.value = ''
   currentQuestion.value = 0
+  vacancyError.value = ''
 }
 
 const clearAndGoToSettings = () => {
@@ -364,13 +445,17 @@ const clearAndGoToSettings = () => {
   answer.value = ''
   sessionId.value = ''
   currentQuestion.value = 0
+  vacancyError.value = ''
 }
 
-onMounted(() => {
-  loadSettings()
-  const hasSavedHistory = loadHistory()
-  if (!hasSavedHistory) {
-    started.value = false
+onMounted(async () => {
+  await checkProfileCompleteness()
+  if (isProfileComplete.value) {
+    loadSettings()
+    const hasSavedHistory = loadHistory()
+    if (!hasSavedHistory) {
+      started.value = false
+    }
   }
 })
 </script>
@@ -414,6 +499,54 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
+/* Стили для предупреждения */
+.warning-card {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.warning-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.warning-card h2 {
+  color: #dc2626;
+  margin-bottom: 1rem;
+}
+
+.warning-card p {
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+.warning-details {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.go-to-resume-btn {
+  margin-top: 1.5rem;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.go-to-resume-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
+}
+
 .setup-card, .interview-container, .finished-card {
   background: white;
   border-radius: 20px;
@@ -435,6 +568,32 @@ onMounted(() => {
   margin-bottom: 0.5rem;
   font-weight: 600;
   color: #374151;
+}
+
+.required-star {
+  color: #ef4444;
+  margin-left: 4px;
+}
+
+.error-message {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.hint {
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-top: 4px;
+  display: block;
+}
+
+.form-group.error .input-field {
+  border-color: #ef4444;
+}
+
+.form-group.error label {
+  color: #ef4444;
 }
 
 .input-field {
@@ -466,9 +625,14 @@ onMounted(() => {
   margin-top: 0.5rem;
 }
 
-.start-btn:hover {
+.start-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
+}
+
+.start-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .progress-bar {
@@ -577,11 +741,6 @@ onMounted(() => {
   box-sizing: border-box;
 }
 
-.answer-input:disabled {
-  background: #f3f4f6;
-  cursor: not-allowed;
-}
-
 .answer-input:focus {
   outline: none;
   border-color: #3b82f6;
@@ -604,19 +763,11 @@ onMounted(() => {
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 .send-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
-}
-
-.hint {
-  text-align: center;
-  color: #64748b;
-  font-size: 0.8rem;
-  margin-top: 0.5rem;
 }
 
 .finished-card {

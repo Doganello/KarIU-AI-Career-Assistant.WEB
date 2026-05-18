@@ -22,48 +22,93 @@
           <h2>Основная информация <span class="required-mark">*</span></h2>
 
           <div class="form-row">
-            <div class="form-group required">
+            <div class="form-group required" :class="{ 'error': errors.last_name }">
               <label>Фамилия <span class="required-star">*</span></label>
-              <input v-model="form.last_name" type="text" class="input-field" />
+              <input
+                  v-model="form.last_name"
+                  type="text"
+                  class="input-field"
+                  @blur="validateField('last_name')"
+              />
+              <div class="error-message" v-if="errors.last_name">{{ errors.last_name }}</div>
             </div>
 
-            <div class="form-group required">
+            <div class="form-group required" :class="{ 'error': errors.first_name }">
               <label>Имя <span class="required-star">*</span></label>
-              <input v-model="form.first_name" type="text" class="input-field" />
+              <input
+                  v-model="form.first_name"
+                  type="text"
+                  class="input-field"
+                  @blur="validateField('first_name')"
+              />
+              <div class="error-message" v-if="errors.first_name">{{ errors.first_name }}</div>
             </div>
 
             <div class="form-group">
               <label>Отчество</label>
-              <input v-model="form.middle_name" type="text" class="input-field" />
+              <input v-model="form.middle_name" type="text" class="input-field"/>
             </div>
           </div>
 
           <div class="form-row">
-            <div class="form-group">
-              <label>Дата рождения</label>
-              <input v-model="form.birth_date" type="date" class="input-field" />
+            <div class="form-group required" :class="{ 'error': errors.birth_date }">
+              <label>Дата рождения <span class="required-star">*</span></label>
+              <input
+                  v-model="form.birth_date"
+                  type="date"
+                  class="input-field"
+                  :max="maxDate"
+                  @blur="validateField('birth_date')"
+              />
+              <div class="error-message" v-if="errors.birth_date">{{ errors.birth_date }}</div>
             </div>
 
-            <div class="form-group required">
+            <div class="form-group required" :class="{ 'error': errors.city }">
               <label>Город <span class="required-star">*</span></label>
-              <input v-model="form.city" type="text" class="input-field" />
+              <input
+                  v-model="form.city"
+                  type="text"
+                  class="input-field"
+                  @blur="validateField('city')"
+              />
+              <div class="error-message" v-if="errors.city">{{ errors.city }}</div>
             </div>
 
-            <div class="form-group required">
+            <div class="form-group required" :class="{ 'error': errors.phone }">
               <label>Телефон <span class="required-star">*</span></label>
-              <input v-model="form.phone" type="tel" class="input-field" />
+              <input
+                  v-model="form.phone"
+                  type="tel"
+                  class="input-field"
+                  @blur="validateField('phone')"
+              />
+              <div class="error-message" v-if="errors.phone">{{ errors.phone }}</div>
             </div>
           </div>
 
           <div class="form-row">
-            <div class="form-group required">
+            <div class="form-group required" :class="{ 'error': errors.specialty }">
               <label>Специальность <span class="required-star">*</span></label>
-              <input v-model="form.specialty" type="text" class="input-field" />
+              <input
+                  v-model="form.specialty"
+                  type="text"
+                  class="input-field"
+                  @blur="validateField('specialty')"
+              />
+              <div class="error-message" v-if="errors.specialty">{{ errors.specialty }}</div>
             </div>
 
             <div class="form-group">
               <label>Год окончания</label>
-              <input v-model="form.grad_year" type="number" class="input-field" />
+              <input
+                  v-model="form.grad_year"
+                  type="number"
+                  class="input-field"
+                  min="1950"
+                  :max="currentYear"
+                  @blur="validateField('grad_year')"
+              />
+              <div class="error-message" v-if="errors.grad_year">{{ errors.grad_year }}</div>
             </div>
 
             <div class="form-group">
@@ -90,12 +135,12 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Компания</label>
-                <input v-model="exp.company" type="text" class="input-field" />
+                <input v-model="exp.company" type="text" class="input-field"/>
               </div>
 
               <div class="form-group">
                 <label>Должность</label>
-                <input v-model="exp.position" type="text" class="input-field" />
+                <input v-model="exp.position" type="text" class="input-field"/>
               </div>
             </div>
 
@@ -152,7 +197,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -162,6 +207,18 @@ const loading = ref(true)
 const saving = ref(false)
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+
+const currentYear = computed(() => new Date().getFullYear())
+const maxDate = computed(() => {
+  const date = new Date()
+  date.setFullYear(date.getFullYear() - 16)
+  return date.toISOString().split('T')[0]
+})
+const minDate = computed(() => {
+  const date = new Date()
+  date.setFullYear(date.getFullYear() - 100)
+  return date.toISOString().split('T')[0]
+})
 
 const form = reactive({
   last_name: '',
@@ -179,6 +236,98 @@ const form = reactive({
 
 const experiences = ref([])
 const programs = ref([])
+
+const errors = reactive({
+  last_name: '',
+  first_name: '',
+  birth_date: '',
+  phone: '',
+  city: '',
+  specialty: '',
+  grad_year: ''
+})
+
+const validateField = (field) => {
+  switch (field) {
+    case 'last_name':
+      if (!form.last_name.trim()) {
+        errors.last_name = 'Фамилия обязательна для заполнения'
+      } else if (!/^[а-яА-ЯёЁa-zA-Z\s-]+$/.test(form.last_name)) {
+        errors.last_name = 'Фамилия должна содержать только буквы'
+      } else {
+        errors.last_name = ''
+      }
+      break
+    case 'first_name':
+      if (!form.first_name.trim()) {
+        errors.first_name = 'Имя обязательно для заполнения'
+      } else if (!/^[а-яА-ЯёЁa-zA-Z\s-]+$/.test(form.first_name)) {
+        errors.first_name = 'Имя должно содержать только буквы'
+      } else {
+        errors.first_name = ''
+      }
+      break
+    case 'birth_date':
+      if (!form.birth_date) {
+        errors.birth_date = 'Дата рождения обязательна для заполнения'
+      } else {
+        const birthYear = new Date(form.birth_date).getFullYear()
+        const age = currentYear.value - birthYear
+        if (age < 16) {
+          errors.birth_date = 'Вам должно быть не менее 16 лет'
+        } else if (age > 100) {
+          errors.birth_date = 'Проверьте корректность даты рождения'
+        } else {
+          errors.birth_date = ''
+        }
+      }
+      break
+    case 'phone':
+      if (!form.phone.trim()) {
+        errors.phone = 'Телефон обязателен для заполнения'
+      } else if (!/^[\+\d\s\(\)-]{10,20}$/.test(form.phone)) {
+        errors.phone = 'Введите корректный номер телефона'
+      } else {
+        errors.phone = ''
+      }
+      break
+    case 'city':
+      if (!form.city.trim()) {
+        errors.city = 'Город обязателен для заполнения'
+      } else if (!/^[а-яА-ЯёЁa-zA-Z\s-]+$/.test(form.city)) {
+        errors.city = 'Город должен содержать только буквы'
+      } else {
+        errors.city = ''
+      }
+      break
+    case 'specialty':
+      if (!form.specialty.trim()) {
+        errors.specialty = 'Специальность обязательна для заполнения'
+      } else {
+        errors.specialty = ''
+      }
+      break
+    case 'grad_year':
+      if (form.grad_year && (form.grad_year < 1950 || form.grad_year > currentYear.value + 5)) {
+        errors.grad_year = `Год должен быть между 1950 и ${currentYear.value + 5}`
+      } else {
+        errors.grad_year = ''
+      }
+      break
+  }
+}
+
+const validateForm = () => {
+  validateField('last_name')
+  validateField('first_name')
+  validateField('birth_date')
+  validateField('phone')
+  validateField('city')
+  validateField('specialty')
+  validateField('grad_year')
+
+  return !errors.last_name && !errors.first_name && !errors.birth_date && !errors.phone && !errors.city && !errors.specialty
+}
 
 const addExperience = () => {
   experiences.value.push({
@@ -226,6 +375,10 @@ const loadResumeData = async () => {
         router.push('/login')
         return
       }
+      if (response.status === 404) {
+        console.log('Профиль не найден, будет создан при сохранении')
+        return
+      }
       throw new Error(`HTTP ${response.status}`)
     }
 
@@ -258,8 +411,8 @@ const loadResumeData = async () => {
 }
 
 const saveResume = async () => {
-  if (!form.last_name || !form.first_name || !form.phone || !form.city || !form.specialty) {
-    alert('Заполните обязательные поля: Фамилия, Имя, Телефон, Город, Специальность')
+  if (!validateForm()) {
+    alert('Пожалуйста, исправьте ошибки в форме')
     return
   }
 
@@ -273,9 +426,9 @@ const saveResume = async () => {
     payload.phone = form.phone
     payload.city = form.city
     payload.specialty = form.specialty
+    payload.birth_date = form.birth_date
 
     if (form.middle_name) payload.middle_name = form.middle_name
-    if (form.birth_date) payload.birth_date = form.birth_date
     payload.personal_qualities = form.personal_qualities || ''
     if (form.grad_year) payload.grad_year = form.grad_year
     payload.program_id = form.program_id === null ? null : form.program_id
@@ -462,6 +615,27 @@ onMounted(() => {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.error-message {
+  color: #ef4444;
+  font-size: 0.7rem;
+  margin-top: 4px;
+}
+
+.form-group.error .input-field {
+  border-color: #ef4444;
+}
+
+.form-group.error label {
+  color: #ef4444;
+}
+
+.hint {
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-top: 4px;
+  display: block;
 }
 
 .program-select {
