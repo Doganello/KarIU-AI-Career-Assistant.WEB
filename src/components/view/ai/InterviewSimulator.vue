@@ -11,8 +11,8 @@
     <div v-if="!isProfileComplete" class="warning-card">
       <div class="warning-icon">⚠️</div>
       <h2>Резюме не заполнено</h2>
-      <p>Для доступа к симулятору собеседования необходимо полностью заполнить резюме.</p>
-      <p class="warning-details">Обязательные поля: Фамилия, Имя, Дата рождения, Телефон, Город, Специальность</p>
+      <p>Для доступа к симулятору собеседования необходимо заполнить резюме.</p>
+      <p class="warning-details">Обязательные поля: Фамилия, Имя, Телефон, Город, Специальность</p>
       <button @click="goToResume" class="go-to-resume-btn">
         📝 Перейти к заполнению резюме
       </button>
@@ -46,7 +46,7 @@
             v-model="settings.vacancy"
             type="text"
             class="input-field"
-            placeholder=""
+            placeholder="Фельдшер скорой помощи"
             @blur="validateVacancy"
             @input="validateVacancy"
         />
@@ -96,6 +96,7 @@
         </div>
       </div>
 
+      <!-- Поле ввода ответа - отключается после завершения собеседования -->
       <div v-if="!finished" class="answer-area">
         <textarea
             v-model="answer"
@@ -110,6 +111,7 @@
         <p class="hint">💡 Подсказка: Ctrl+Enter для отправки</p>
       </div>
 
+      <!-- Блок после завершения собеседования -->
       <div v-else class="finished-card">
         <div class="finished-icon">🎉</div>
         <h2>Собеседование завершено!</h2>
@@ -162,22 +164,18 @@ const settings = ref({
 })
 
 const hasHistory = computed(() => messages.value.length > 0)
-const progressPercent = computed(() => (currentQuestion.value / maxQuestions) * 100)
+const progressPercent = computed(() => {
+  let percent = (currentQuestion.value / maxQuestions) * 100
+  return percent > 100 ? 100 : percent
+})
 const isVacancyValid = computed(() => settings.value.vacancy.trim().length >= 3 && !vacancyError.value)
 
-// Валидация вакансии
 const validateVacancy = () => {
   const vacancy = settings.value.vacancy.trim()
   if (!vacancy) {
     vacancyError.value = 'Укажите вакансию'
   } else if (vacancy.length < 3) {
     vacancyError.value = 'Название вакансии слишком короткое (минимум 3 символа)'
-  } else if (vacancy.length > 100) {
-    vacancyError.value = 'Название вакансии слишком длинное (максимум 100 символов)'
-  } else if (/^\d+$/.test(vacancy)) {
-    vacancyError.value = 'Вакансия не может состоять только из цифр'
-  } else if (/^[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/.test(vacancy)) {
-    vacancyError.value = 'Вакансия не может состоять только из символов'
   } else {
     vacancyError.value = ''
   }
@@ -216,25 +214,15 @@ const checkProfileCompleteness = async () => {
     if (response.ok) {
       profileData.value = await response.json()
 
-      // Проверяем все обязательные поля резюме
       const requiredFields = ['last_name', 'first_name', 'birth_date', 'phone', 'city', 'specialty']
       const allFieldsFilled = requiredFields.every(field => {
         const value = profileData.value[field]
         return value && value.trim() !== ''
       })
 
-      // Проверяем возраст (не менее 16 лет)
-      let ageValid = true
-      if (profileData.value.birth_date) {
-        const birthYear = new Date(profileData.value.birth_date).getFullYear()
-        const currentYear = new Date().getFullYear()
-        const age = currentYear - birthYear
-        ageValid = age >= 16
-      }
-
       const hasEducation = profileData.value.program_id !== null || profileData.value.program_master_id !== null
 
-      isProfileComplete.value = allFieldsFilled && ageValid && hasEducation
+      isProfileComplete.value = allFieldsFilled && hasEducation
     } else {
       isProfileComplete.value = false
     }
@@ -326,6 +314,7 @@ const startInterview = async () => {
   if (!settings.value.vacancy.trim() || vacancyError.value) return
 
   loading.value = true
+  finished.value = false
 
   try {
     const response = await fetch(`${API_BASE}/api/ai/interview/start`, {
@@ -341,8 +330,7 @@ const startInterview = async () => {
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.detail || 'Ошибка начала собеседования')
+      throw new Error('Ошибка начала собеседования')
     }
 
     const data = await response.json()
@@ -352,14 +340,13 @@ const startInterview = async () => {
       { role: 'bot', content: data.question }
     ]
     started.value = true
-    finished.value = false
     currentQuestion.value = 1
 
     await scrollToBottom()
 
   } catch (error) {
     console.error('Error:', error)
-    alert(error.message)
+    alert('Ошибка начала собеседования: ' + error.message)
   } finally {
     loading.value = false
   }
@@ -394,10 +381,8 @@ const sendAnswer = async () => {
     currentQuestion.value++
     await scrollToBottom()
 
-    if (currentQuestion.value > maxQuestions ||
-        data.response.includes('ИТОГИ СОБЕСЕДОВАНИЯ') ||
-        data.response.includes('ФИНАЛЬНЫЙ ОТЧЁТ') ||
-        data.response.includes('Вердикт')) {
+    // Завершаем собеседование после 6 вопросов
+    if (currentQuestion.value > maxQuestions) {
       finished.value = true
     }
 
@@ -499,7 +484,6 @@ onMounted(async () => {
   transform: translateY(-2px);
 }
 
-/* Стили для предупреждения */
 .warning-card {
   background: white;
   border-radius: 20px;
