@@ -24,23 +24,13 @@
           <div class="form-row">
             <div class="form-group required" :class="{ 'error': errors.last_name }">
               <label>Фамилия <span class="required-star">*</span></label>
-              <input
-                  v-model="form.last_name"
-                  type="text"
-                  class="input-field"
-                  @blur="validateField('last_name')"
-              />
+              <input v-model="form.last_name" type="text" class="input-field" @blur="validateField('last_name')" />
               <div class="error-message" v-if="errors.last_name">{{ errors.last_name }}</div>
             </div>
 
             <div class="form-group required" :class="{ 'error': errors.first_name }">
               <label>Имя <span class="required-star">*</span></label>
-              <input
-                  v-model="form.first_name"
-                  type="text"
-                  class="input-field"
-                  @blur="validateField('first_name')"
-              />
+              <input v-model="form.first_name" type="text" class="input-field" @blur="validateField('first_name')" />
               <div class="error-message" v-if="errors.first_name">{{ errors.first_name }}</div>
             </div>
 
@@ -53,35 +43,19 @@
           <div class="form-row">
             <div class="form-group required" :class="{ 'error': errors.birth_date }">
               <label>Дата рождения <span class="required-star">*</span></label>
-              <input
-                  v-model="form.birth_date"
-                  type="date"
-                  class="input-field"
-                  :max="maxDate"
-                  @blur="validateField('birth_date')"
-              />
+              <input v-model="form.birth_date" type="date" class="input-field" :max="maxDate" @blur="validateField('birth_date')" />
               <div class="error-message" v-if="errors.birth_date">{{ errors.birth_date }}</div>
             </div>
 
             <div class="form-group required" :class="{ 'error': errors.city }">
               <label>Город <span class="required-star">*</span></label>
-              <input
-                  v-model="form.city"
-                  type="text"
-                  class="input-field"
-                  @blur="validateField('city')"
-              />
+              <input v-model="form.city" type="text" class="input-field" @blur="validateField('city')" />
               <div class="error-message" v-if="errors.city">{{ errors.city }}</div>
             </div>
 
             <div class="form-group required" :class="{ 'error': errors.phone }">
               <label>Телефон <span class="required-star">*</span></label>
-              <input
-                  v-model="form.phone"
-                  type="tel"
-                  class="input-field"
-                  @blur="validateField('phone')"
-              />
+              <input v-model="form.phone" type="tel" class="input-field" @blur="validateField('phone')" />
               <div class="error-message" v-if="errors.phone">{{ errors.phone }}</div>
             </div>
           </div>
@@ -89,25 +63,13 @@
           <div class="form-row">
             <div class="form-group required" :class="{ 'error': errors.specialty }">
               <label>Специальность <span class="required-star">*</span></label>
-              <input
-                  v-model="form.specialty"
-                  type="text"
-                  class="input-field"
-                  @blur="validateField('specialty')"
-              />
+              <input v-model="form.specialty" type="text" class="input-field" @blur="validateField('specialty')" />
               <div class="error-message" v-if="errors.specialty">{{ errors.specialty }}</div>
             </div>
 
             <div class="form-group">
               <label>Год окончания</label>
-              <input
-                  v-model="form.grad_year"
-                  type="number"
-                  class="input-field"
-                  min="1950"
-                  :max="currentYear"
-                  @blur="validateField('grad_year')"
-              />
+              <input v-model="form.grad_year" type="number" class="input-field" min="1950" :max="currentYear" @blur="validateField('grad_year')" />
               <div class="error-message" v-if="errors.grad_year">{{ errors.grad_year }}</div>
             </div>
 
@@ -153,6 +115,7 @@
               <div class="form-group">
                 <label>Дата окончания</label>
                 <input v-model="exp.end_date" type="date" class="input-field" />
+                <small class="hint">Если работаете до сих пор - оставьте пустым</small>
               </div>
             </div>
 
@@ -165,7 +128,7 @@
 
             <div class="form-group">
               <label>Описание</label>
-              <textarea v-model="exp.description" class="input-field" rows="3"></textarea>
+              <textarea v-model="exp.description" class="textarea-description" placeholder="Опишите ваши обязанности, проекты и достижения..."></textarea>
             </div>
           </div>
 
@@ -173,13 +136,50 @@
         </section>
 
         <section class="section">
+          <h2>Сертификаты и достижения</h2>
+
+          <div v-for="(cert, index) in certificates" :key="index" class="certificate-item">
+            <div class="certificate-header">
+              <h3>Сертификат #{{ index + 1 }}</h3>
+              <button type="button" @click="removeCertificate(index)" class="remove-btn">Удалить</button>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Название сертификата</label>
+                <input v-model="cert.title" type="text" class="input-field" placeholder="Например: Сертификат о прохождении курса Python" />
+              </div>
+
+              <div class="form-group">
+                <label>Организация / Курс</label>
+                <input v-model="cert.issuer" type="text" class="input-field" placeholder="Например: Coursera, Stepik, НИШ" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Дата получения</label>
+                <input v-model="cert.issued_date" type="date" class="input-field" />
+              </div>
+
+              <div class="form-group">
+                <label>Ссылка на сертификат</label>
+                <input v-model="cert.url" type="url" class="input-field" placeholder="https://example.com/certificate" />
+              </div>
+            </div>
+          </div>
+
+          <button type="button" @click="addCertificate" class="add-btn">+ Добавить сертификат</button>
+        </section>
+
+        <section class="section">
           <h2>Ключевые навыки</h2>
-          <textarea v-model="form.skills_text" class="input-field" rows="4"></textarea>
+          <textarea v-model="form.skills_text" class="textarea-skills" placeholder="Перечислите ваши навыки через запятую или каждый с новой строки..."></textarea>
         </section>
 
         <section class="section">
           <h2>Личные качества</h2>
-          <textarea v-model="form.personal_qualities" class="input-field" rows="4"></textarea>
+          <textarea v-model="form.personal_qualities" class="textarea-qualities" placeholder="Опишите ваши личные качества..."></textarea>
         </section>
       </div>
 
@@ -208,15 +208,18 @@ const saving = ref(false)
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
+const getAuthHeaders = () => {
+  const token = authStore.token
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  }
+}
+
 const currentYear = computed(() => new Date().getFullYear())
 const maxDate = computed(() => {
   const date = new Date()
   date.setFullYear(date.getFullYear() - 16)
-  return date.toISOString().split('T')[0]
-})
-const minDate = computed(() => {
-  const date = new Date()
-  date.setFullYear(date.getFullYear() - 100)
   return date.toISOString().split('T')[0]
 })
 
@@ -235,6 +238,7 @@ const form = reactive({
 })
 
 const experiences = ref([])
+const certificates = ref([])
 const programs = ref([])
 
 const errors = reactive({
@@ -325,7 +329,6 @@ const validateForm = () => {
   validateField('city')
   validateField('specialty')
   validateField('grad_year')
-
   return !errors.last_name && !errors.first_name && !errors.birth_date && !errors.phone && !errors.city && !errors.specialty
 }
 
@@ -344,14 +347,25 @@ const removeExperience = (index) => {
   experiences.value.splice(index, 1)
 }
 
+const addCertificate = () => {
+  certificates.value.push({
+    title: '',
+    issuer: '',
+    issued_date: '',
+    url: ''
+  })
+}
+
+const removeCertificate = (index) => {
+  certificates.value.splice(index, 1)
+}
+
 const loadPrograms = async () => {
   try {
     const response = await fetch(`${API_BASE}/api/resume/educational-programs`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include'
+      headers: getAuthHeaders()
     })
-
     if (response.ok) {
       programs.value = await response.json()
     }
@@ -365,8 +379,7 @@ const loadResumeData = async () => {
   try {
     const response = await fetch(`${API_BASE}/api/resume/profile`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include'
+      headers: getAuthHeaders()
     })
 
     if (!response.ok) {
@@ -402,6 +415,7 @@ const loadResumeData = async () => {
     }
 
     experiences.value = data.experiences || []
+    certificates.value = data.certificates || []
 
   } catch (err) {
     console.error('Ошибка загрузки:', err)
@@ -419,34 +433,30 @@ const saveResume = async () => {
   saving.value = true
 
   try {
-    const payload = {}
-
-    payload.last_name = form.last_name
-    payload.first_name = form.first_name
-    payload.phone = form.phone
-    payload.city = form.city
-    payload.specialty = form.specialty
-    payload.birth_date = form.birth_date
-
-    if (form.middle_name) payload.middle_name = form.middle_name
-    payload.personal_qualities = form.personal_qualities || ''
-    if (form.grad_year) payload.grad_year = form.grad_year
-    payload.program_id = form.program_id === null ? null : form.program_id
-
-    const validExperiences = experiences.value.filter(exp => exp.company && exp.position)
-    payload.experiences = validExperiences
-
-    if (form.skills_text && form.skills_text.trim()) {
-      const skillNames = form.skills_text.split(',').map(s => s.trim()).filter(s => s)
-      payload.skills = skillNames.map(name => ({ name, level: 'intermediate' }))
-    } else {
-      payload.skills = []
+    const payload = {
+      last_name: form.last_name,
+      first_name: form.first_name,
+      phone: form.phone,
+      city: form.city,
+      specialty: form.specialty,
+      birth_date: form.birth_date,
+      middle_name: form.middle_name || undefined,
+      personal_qualities: form.personal_qualities || '',
+      grad_year: form.grad_year || undefined,
+      program_id: form.program_id === null ? null : form.program_id,
+      experiences: experiences.value.filter(exp => exp.company && exp.position).map(exp => ({
+        ...exp,
+        end_date: exp.end_date || null
+      })),
+      certificates: certificates.value.filter(cert => cert.title),
+      skills: form.skills_text.trim()
+          ? form.skills_text.split(',').map(s => s.trim()).filter(s => s).map(name => ({ name, level: 'intermediate' }))
+          : []
     }
 
     const response = await fetch(`${API_BASE}/api/resume/profile`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload)
     })
 
@@ -617,6 +627,51 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+/* Увеличенные текстовые поля */
+.textarea-skills {
+  width: 100%;
+  height: 300px;
+  resize: vertical;
+  font-size: 1rem;
+  line-height: 1.6;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: inherit;
+}
+
+.textarea-qualities {
+  width: 100%;
+  height: 200px;
+  resize: vertical;
+  font-size: 1rem;
+  line-height: 1.6;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: inherit;
+}
+
+.textarea-description {
+  width: 100%;
+  height: 350px;
+  resize: vertical;
+  font-size: 1rem;
+  line-height: 1.6;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: inherit;
+}
+
+.textarea-skills:focus,
+.textarea-qualities:focus,
+.textarea-description:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
 .error-message {
   color: #ef4444;
   font-size: 0.7rem;
@@ -653,21 +708,24 @@ onMounted(() => {
   text-align: left;
 }
 
-.experience-item {
+.experience-item,
+.certificate-item {
   background: #f8fafc;
   padding: 1.5rem;
   border-radius: 12px;
   margin-bottom: 1.5rem;
 }
 
-.experience-header {
+.experience-header,
+.certificate-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
 
-.experience-header h3 {
+.experience-header h3,
+.certificate-header h3 {
   margin: 0;
   color: #1e40af;
   font-size: 1.1rem;
@@ -747,14 +805,21 @@ onMounted(() => {
   .resume-page {
     padding: 1rem;
   }
-
   .section {
-    padding: 1.5rem;
+    padding: 1rem;
   }
-
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+  .textarea-skills {
+    height: 200px;
+  }
+  .textarea-qualities {
+    height: 150px;
+  }
+  .textarea-description {
+    height: 200px;
   }
 }
 </style>

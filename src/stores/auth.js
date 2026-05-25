@@ -5,6 +5,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         user: null,
+        token: localStorage.getItem('token') || null,  // ← ДОБАВИТЬ
         isAuthenticated: false,
         loading: false
     }),
@@ -16,7 +17,6 @@ export const useAuthStore = defineStore('auth', {
                 const response = await fetch(`${API_BASE}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
                     body: JSON.stringify({ email, password })
                 })
 
@@ -26,6 +26,12 @@ export const useAuthStore = defineStore('auth', {
                 }
 
                 const data = await response.json()
+
+                // ← СОХРАНЯЕМ ТОКЕН
+                this.token = data.access_token || data.token
+                localStorage.setItem('token', this.token)
+
+                // Загружаем данные пользователя
                 await this.checkAuth()
                 return data
             } finally {
@@ -39,7 +45,6 @@ export const useAuthStore = defineStore('auth', {
                 const response = await fetch(`${API_BASE}/api/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
                     body: JSON.stringify({
                         email: userData.email,
                         password: userData.password
@@ -51,17 +56,31 @@ export const useAuthStore = defineStore('auth', {
                     throw new Error(errorData.detail || 'Ошибка регистрации')
                 }
 
+                const data = await response.json()
+
+                // ← СОХРАНЯЕМ ТОКЕН
+                this.token = data.access_token || data.token
+                localStorage.setItem('token', this.token)
+
                 await this.checkAuth()
-                return await response.json()
+                return data
             } finally {
                 this.loading = false
             }
         },
 
         async checkAuth() {
+            if (!this.token) {
+                this.user = null
+                this.isAuthenticated = false
+                return false
+            }
+
             try {
                 const response = await fetch(`${API_BASE}/api/auth/me`, {
-                    credentials: 'include'
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`  // ← ДОБАВИТЬ ТОКЕН
+                    }
                 })
 
                 if (!response.ok) {
@@ -82,14 +101,19 @@ export const useAuthStore = defineStore('auth', {
             try {
                 await fetch(`${API_BASE}/api/auth/logout`, {
                     method: 'POST',
-                    credentials: 'include'
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`  // ← ДОБАВИТЬ ТОКЕН
+                    }
                 })
             } catch (e) {
                 console.warn('Logout request failed', e)
             }
 
+            // Очищаем токен
+            this.token = null
             this.user = null
             this.isAuthenticated = false
+            localStorage.removeItem('token')
         }
     }
 })

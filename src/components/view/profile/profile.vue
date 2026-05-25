@@ -42,6 +42,20 @@
       </div>
 
       <div class="card">
+        <h2>Сертификаты</h2>
+        <div v-if="profile.certificates && profile.certificates.length > 0">
+          <div v-for="(cert, idx) in profile.certificates" :key="idx" class="certificate-item">
+            <strong>{{ cert.title }}</strong>
+            <span v-if="cert.issuer"> — {{ cert.issuer }}</span>
+            <br>
+            <small v-if="cert.issued_date">Получен: {{ cert.issued_date }}</small>
+            <a v-if="cert.url" :href="cert.url" target="_blank" class="cert-link">Посмотреть сертификат</a>
+          </div>
+        </div>
+        <p v-else class="empty">Сертификаты не добавлены</p>
+      </div>
+
+      <div class="card">
         <h2>Навыки</h2>
         <p v-if="skillsText" class="skills-text">{{ skillsText }}</p>
         <p v-else class="empty">Навыки не указаны</p>
@@ -199,6 +213,30 @@ onMounted(() => {
   border-bottom: none;
   margin-bottom: 0;
   padding-bottom: 0;
+}
+
+.certificate-item {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.certificate-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.cert-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.cert-link:hover {
+  text-decoration: underline;
 }
 
 .internship-badge {
