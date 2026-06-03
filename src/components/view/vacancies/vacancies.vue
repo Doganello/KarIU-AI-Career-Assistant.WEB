@@ -2,9 +2,27 @@
   <div class="vacancies-page">
     <div class="vacancies-header">
       <h1 class="page-title">💼 Вакансии</h1>
-      <button @click="parseVacancies" :disabled="parsing" class="refresh-btn">
-        {{ parsing ? 'Обновление...' : '🔄 Обновить вакансии' }}
+      <button @click="parseVacancies" :disabled="parsing" class="parse-btn">
+        {{ parsing ? 'Парсинг...' : '🔄 Обновить вакансии' }}
       </button>
+    </div>
+
+    <!-- Ссылка на Enbek -->
+    <div class="enbek-link-container">
+      <a
+          href="https://www.enbek.kz/ru/search/vacancy"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="enbek-link"
+      >
+        <span class="enbek-icon">📋</span>
+        Искать вакансии на сайте Enbek.kz
+        <svg class="external-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      </a>
     </div>
 
     <div v-if="loading" class="loading">
@@ -55,9 +73,6 @@ const loadVacancies = async () => {
 
     if (response.ok) {
       vacancies.value = await response.json()
-      console.log('Загружены вакансии:', vacancies.value.length)
-    } else {
-      console.error('Ошибка загрузки:', response.status)
     }
   } catch (err) {
     console.error('Ошибка загрузки вакансий:', err)
@@ -106,7 +121,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
@@ -120,7 +135,7 @@ onMounted(() => {
   margin: 0;
 }
 
-.refresh-btn {
+.parse-btn {
   background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
   color: white;
   border: none;
@@ -132,14 +147,54 @@ onMounted(() => {
   transition: all 0.2s;
 }
 
-.refresh-btn:hover:not(:disabled) {
+.parse-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
 }
 
-.refresh-btn:disabled {
+.parse-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.enbek-link-container {
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+  text-align: right;
+}
+
+.enbek-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef3c7;
+  color: #d97706;
+  padding: 8px 16px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid #fde68a;
+}
+
+.enbek-link:hover {
+  background: #fde68a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.2);
+}
+
+.enbek-icon {
+  font-size: 1rem;
+}
+
+.external-icon {
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.enbek-link:hover .external-icon {
+  opacity: 1;
 }
 
 .vacancies-grid {
@@ -225,6 +280,11 @@ onMounted(() => {
   .vacancies-header {
     flex-direction: column;
     text-align: center;
+  }
+
+  .enbek-link-container {
+    text-align: center;
+    margin-bottom: 1rem;
   }
 
   .vacancies-grid {

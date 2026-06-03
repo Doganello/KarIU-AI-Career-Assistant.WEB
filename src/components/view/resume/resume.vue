@@ -2,6 +2,9 @@
   <div class="resume-page">
     <div class="resume-container">
       <div class="header-actions">
+        <button @click="generateCV" :disabled="generating" class="generate-btn">
+          {{ generating ? 'Генерация...' : '📄 Скачать резюме (DOCX)' }}
+        </button>
         <button @click="saveResume" :disabled="saving" class="save-btn">
           {{ saving ? 'Сохранение...' : '💾 Сохранить резюме' }}
         </button>
@@ -205,6 +208,7 @@ const authStore = useAuthStore()
 const router = useRouter()
 const loading = ref(true)
 const saving = ref(false)
+const generating = ref(false)
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
@@ -476,6 +480,30 @@ const saveResume = async () => {
   }
 }
 
+const generateCV = async () => {
+  generating.value = true
+  try {
+    const response = await fetch(`${API_BASE}/api/resume/generate-cv?lang=ru`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      throw new Error('Ошибка генерации')
+    }
+
+    const data = await response.json()
+    window.open(`${API_BASE}${data.download_url}`, '_blank')
+
+  } catch (err) {
+    console.error('Ошибка:', err)
+    alert('Ошибка при генерации резюме')
+  } finally {
+    generating.value = false
+  }
+}
+
 onMounted(() => {
   loadResumeData()
   loadPrograms()
@@ -503,6 +531,31 @@ onMounted(() => {
   text-align: right;
   background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.generate-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .save-btn {
@@ -627,7 +680,6 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Увеличенные текстовые поля */
 .textarea-skills {
   width: 100%;
   height: 300px;
@@ -662,14 +714,6 @@ onMounted(() => {
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-family: inherit;
-}
-
-.textarea-skills:focus,
-.textarea-qualities:focus,
-.textarea-description:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .error-message {
@@ -812,14 +856,11 @@ onMounted(() => {
     grid-template-columns: 1fr;
     gap: 0;
   }
-  .textarea-skills {
-    height: 200px;
+  .header-actions {
+    flex-direction: column;
   }
-  .textarea-qualities {
-    height: 150px;
-  }
-  .textarea-description {
-    height: 200px;
+  .generate-btn, .save-btn {
+    width: 100%;
   }
 }
 </style>
