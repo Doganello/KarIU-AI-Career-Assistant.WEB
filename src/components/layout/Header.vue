@@ -1,13 +1,11 @@
-﻿<script setup>
-import { useAuthStore } from '@/stores/auth'
-
-const authStore = useAuthStore()
-</script>
-
-<template>
+﻿<template>
   <header class="header">
     <div class="header-left">
-      <img src="@/assets/logo.jpeg" alt="KarIU" class="logo" />
+      <img
+          src="//dot.tttu.edu.kz/pluginfile.php/1/theme_space/customlogo/1766124818/logo-header.png"
+          class="logo"
+          alt="Қарағанды индустриялық университеті"
+      />
       <div class="title">
         <h1>KarIU Career Assistant</h1>
         <p class="subtitle">Помогаем строить успешную карьеру</p>
@@ -16,7 +14,7 @@ const authStore = useAuthStore()
 
     <div class="university-contacts">
       <span>📞 8 (7213) 91-56-26</span>
-      <span>✉️ info@ttu.edu.kz</span>
+      <span>✉️ info@tttu.edu.kz</span>
       <span>📍 г. Темиртау, пр. Республики 30</span>
     </div>
 
@@ -26,6 +24,12 @@ const authStore = useAuthStore()
   </header>
 </template>
 
+<script setup>
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+</script>
+
 <style scoped>
 .header {
   background: #0a1e5c;
@@ -33,7 +37,7 @@ const authStore = useAuthStore()
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   height: 80px;
   position: sticky;
   top: 0;
@@ -50,10 +54,6 @@ const authStore = useAuthStore()
 .logo {
   height: 54px;
   width: auto;
-  background: white;
-  border-radius: 12px;
-  padding: 4px 8px;
-  object-fit: contain;
 }
 
 .title h1 {
@@ -101,7 +101,6 @@ const authStore = useAuthStore()
   white-space: nowrap;
 }
 
-/* Адаптивность */
 @media (max-width: 1024px) {
   .university-contacts {
     gap: 15px;

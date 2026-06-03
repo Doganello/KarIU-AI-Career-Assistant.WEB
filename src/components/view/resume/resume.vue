@@ -12,7 +12,11 @@
 
       <header class="resume-header">
         <div class="header-content">
-          <img src="@/assets/logo.jpeg" alt="KarIU" class="resume-logo" />
+          <img
+              src="//dot.tttu.edu.kz/pluginfile.php/1/theme_space/customlogo/1766124818/logo-header.png"
+              class="resume-logo"
+              alt="Қарағанды индустриялық университеті"
+          />
           <div class="header-text">
             <h1>KarIU Career Assistant</h1>
             <p class="subtitle">Помогаем строить успешную карьеру</p>
@@ -580,36 +584,42 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
+/* Шапка в стиле Header.vue — на всю ширину */
 .resume-header {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-  padding: 2rem;
-  color: white;
+  background: #0a1e5c;
+  padding: 0 2rem;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header-content {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .resume-logo {
-  height: 70px;
+  height: 54px;
   width: auto;
-  background: white;
-  border-radius: 12px;
-  padding: 5px;
 }
 
 .header-text h1 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
+  color: white;
   font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
-  margin: 8px 0 0 0;
-  opacity: 0.9;
-  font-size: 1rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #cbd5e6;
 }
 
 .resume-body {
@@ -861,6 +871,19 @@ onMounted(() => {
   }
   .generate-btn, .save-btn {
     width: 100%;
+  }
+  .resume-header {
+    padding: 0 1rem;
+    height: 70px;
+  }
+  .resume-logo {
+    height: 45px;
+  }
+  .header-text h1 {
+    font-size: 1rem;
+  }
+  .subtitle {
+    display: none;
   }
 }
 </style>
