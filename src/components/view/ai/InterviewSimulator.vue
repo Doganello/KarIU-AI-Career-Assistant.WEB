@@ -46,7 +46,7 @@
             v-model="settings.vacancy"
             type="text"
             class="input-field"
-            placeholder="Фельдшер скорой помощи"
+            placeholder=""
             @blur="validateVacancy"
             @input="validateVacancy"
         />
